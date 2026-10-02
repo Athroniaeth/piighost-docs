@@ -37,7 +37,12 @@
 		</div>
 	</aside>
 
-	<main id="content" class="feuille min-w-0" data-pagefind-body>
+	<main
+		id="content"
+		class="feuille min-w-0"
+		data-pagefind-body
+		data-pagefind-meta="title:{data.page.title}"
+	>
 		<div class="mb-4 flex flex-wrap items-center justify-between gap-3" data-pagefind-ignore>
 			<Breadcrumbs items={data.page.breadcrumbs} label={t.breadcrumb} />
 		</div>
