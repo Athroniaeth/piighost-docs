@@ -8,31 +8,34 @@
 	const lang = $derived(page.params.lang === 'en' ? 'en' : 'fr');
 	const t = $derived(labels(lang));
 
+	/** Who expects what from piighost is business content: each card opens its
+	 *  section of the needs page, which links on to the guide pages of that profile. */
+	const NEEDS = '/fr/wiki/besoins-par-profil/#';
 	const profiles = $derived(
 		lang === 'fr'
 			? [
 					{
 						title: 'Responsable conformité',
 						text: 'Aucune donnée confidentielle ne part en clair, et vous pouvez le prouver.',
-						href: '/fr/guide/dpia/',
-						link: 'Documenter une AIPD'
+						href: `${NEEDS}responsable-conformité-dpo`,
+						link: 'Vos besoins'
 					},
 					{
 						title: 'Développeur',
 						text: 'La protection s’ajoute à votre agent sans réécrire sa logique.',
-						href: '/fr/guide/getting-started/langchain/',
-						link: 'Protéger un agent LangChain'
+						href: `${NEEDS}développeur`,
+						link: 'Vos besoins'
 					},
 					{
 						title: 'Exploitant',
 						text: 'Un serveur partagé, une mémoire chiffrée, des secrets hors des fichiers.',
-						href: '/fr/guide/getting-started/api-server/',
-						link: 'Déployer une API de dé-identification'
+						href: `${NEEDS}exploitant`,
+						link: 'Vos besoins'
 					},
 					{
 						title: 'Utilisateur de l’application',
 						text: 'Il lit ses vraies informations et ne voit jamais un jeton.',
-						href: '/fr/wiki/besoins-par-profil/#utilisateur-de-lapplication',
+						href: `${NEEDS}utilisateur-de-lapplication`,
 						link: 'Ses besoins'
 					}
 				]
@@ -40,25 +43,25 @@
 					{
 						title: 'Compliance officer',
 						text: 'No confidential data leaves in clear, and you can prove it.',
-						href: '/en/guide/dpia/',
-						link: 'Document a DPIA'
+						href: `${NEEDS}responsable-conformité-dpo`,
+						link: 'Your needs (French)'
 					},
 					{
 						title: 'Developer',
 						text: 'The protection joins your agent without rewriting its logic.',
-						href: '/en/guide/getting-started/langchain/',
-						link: 'Protect a LangChain agent'
+						href: `${NEEDS}développeur`,
+						link: 'Your needs (French)'
 					},
 					{
 						title: 'Operator',
 						text: 'A shared server, an encrypted memory, secrets kept out of files.',
-						href: '/en/guide/getting-started/api-server/',
-						link: 'Deploy a de-identification API'
+						href: `${NEEDS}exploitant`,
+						link: 'Your needs (French)'
 					},
 					{
 						title: 'Application user',
 						text: 'They read their real information and never see a token.',
-						href: '/fr/wiki/besoins-par-profil/#utilisateur-de-lapplication',
+						href: `${NEEDS}utilisateur-de-lapplication`,
 						link: 'Their needs (French)'
 					}
 				]
