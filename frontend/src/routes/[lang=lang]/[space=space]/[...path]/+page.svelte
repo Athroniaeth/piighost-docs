@@ -26,7 +26,7 @@
 </svelte:head>
 
 <div
-	class="mx-auto grid max-w-[90rem] gap-8 px-6 py-8 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,1fr)_12rem]"
+	class="mx-auto grid max-w-[84rem] gap-8 px-6 py-8 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,1fr)_12rem]"
 >
 	<aside class="hidden lg:block" aria-label={isWiki ? t.wiki : t.guide}>
 		<div class="sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto pe-2 pb-8">
