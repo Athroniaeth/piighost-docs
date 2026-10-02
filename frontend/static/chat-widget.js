@@ -15,7 +15,7 @@
 			chainlitServer: server,
 			theme: mounted,
 			customCssUrl: `${server}/public/copilot.css`,
-			button: { imageUrl: `${server}/favicon` }
+			button: { imageUrl: `${server}/public/chat-bubble.svg` }
 		});
 	};
 	const loader = document.createElement('script');
