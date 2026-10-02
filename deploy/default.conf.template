@@ -95,13 +95,23 @@ server {
         access_log off;
     }
 
-    # SPA routing: every other URL returns the app, which routes client-side.
-    # `no-cache` on this HTML, else a browser would keep the old hashed asset names
-    # and never see a deployment.
+    # Each page's Markdown source and the llms.txt files: shown as text in the
+    # browser rather than downloaded, which application/octet-stream would do.
+    location ~ \.(md|txt)$ {
+        include /etc/nginx/security-headers.conf;
+
+        types { }
+        default_type "text/plain; charset=utf-8";
+        add_header Cache-Control "no-cache" always;
+    }
+
+    # Every page is prerendered: serve its file, or a real 404. `no-cache` on
+    # the HTML, else a browser would keep the old hashed asset names and never
+    # see a deployment.
     location / {
         include /etc/nginx/security-headers.conf;
 
-        try_files $uri /index.html;
+        try_files $uri $uri/index.html =404;
         add_header Cache-Control "no-cache" always;
     }
 }
