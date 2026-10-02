@@ -1,10 +1,12 @@
+import { SITE_URL } from '#lib/server/content/idcard.js';
 import { getSite } from '#lib/server/content/site.js';
 
 export const prerender = true;
 
 /**
  * The index an assistant reads first (llmstxt.org): every page with its
- * description, grouped by space, each pointing at its Markdown source.
+ * description, grouped by space, then every identifier card, each pointing at
+ * its Markdown source.
  */
 export async function GET() {
 	const site = await getSite();
@@ -28,7 +30,16 @@ export async function GET() {
 		'',
 		section('Technical guide (English)', (route) => route.startsWith('/en/guide/')),
 		section('Guide technique (français)', (route) => route.startsWith('/fr/guide/')),
-		section('Wiki métier (français)', (route) => route.startsWith('/fr/wiki/'))
+		section('Wiki métier (français)', (route) => route.startsWith('/fr/wiki/')),
+		[
+			"## Fiches d'identifiants (français)",
+			'',
+			...[...site.ids.values()].map(
+				(entry) =>
+					`- [${entry.id}](${SITE_URL}/ids/${entry.id}/index.md): ${entry.summary.replace(/\s+/g, ' ').slice(0, 160)}`
+			),
+			''
+		].join('\n')
 	].join('\n');
 	return new Response(body, { headers: { 'content-type': 'text/plain; charset=utf-8' } });
 }

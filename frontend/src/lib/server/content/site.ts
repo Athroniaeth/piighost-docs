@@ -112,7 +112,11 @@ function titleOf(draft: Draft): string {
 function descriptionOf(draft: Draft): string {
 	const fromMatter = draft.frontmatter.description;
 	if (typeof fromMatter === 'string' && fromMatter) return fromMatter;
-	const paragraph = draft.mdast.children.find((node) => node.type === 'paragraph');
+	// A reference page opens on the module it documents, `Module: piighost.x`,
+	// which says nothing of what the page holds: the next paragraph does.
+	const paragraph = draft.mdast.children.find(
+		(node) => node.type === 'paragraph' && !/^Module\s?:/.test(toString(node))
+	);
 	return paragraph ? toString(paragraph).slice(0, 220) : '';
 }
 
@@ -188,9 +192,14 @@ async function load(): Promise<Site> {
 		const file = join(CONTENT_ROOT, repoPath);
 		const written = readFileSync(file, 'utf8');
 		// Includes resolve as Zensical's base_path does: the page's language folder, then docs/.
-		const bases = space === 'guide' ? [join(CONTENT_ROOT, 'docs', lang), join(CONTENT_ROOT, 'docs')] : [join(CONTENT_ROOT, 'openwiki')];
+		const bases =
+			space === 'guide'
+				? [join(CONTENT_ROOT, 'docs', lang), join(CONTENT_ROOT, 'docs')]
+				: [join(CONTENT_ROOT, 'openwiki')];
 		const read = (path: string) => {
-			const found = bases.map((base) => join(base, path)).find((candidate) => existsSync(candidate));
+			const found = bases
+				.map((base) => join(base, path))
+				.find((candidate) => existsSync(candidate));
 			return found ? readFileSync(found, 'utf8') : undefined;
 		};
 		const includeProblems: string[] = [];
@@ -245,7 +254,9 @@ async function load(): Promise<Site> {
 	}
 
 	// The rules the wiki locates, joined to the code graph when it was built.
-	for (const [rule, trace] of traceRules(drafts.filter((item) => item.space === 'wiki').map((item) => item.mdast))) {
+	for (const [rule, trace] of traceRules(
+		drafts.filter((item) => item.space === 'wiki').map((item) => item.mdast)
+	)) {
 		const entry = ids.get(rule);
 		if (entry) entry.trace = trace;
 	}

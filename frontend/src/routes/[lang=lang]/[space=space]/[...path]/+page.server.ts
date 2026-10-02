@@ -1,7 +1,10 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { getSite } from '#lib/server/content/site.js';
 import { REPOSITORY, BRANCH } from '#lib/server/content/config.js';
 import type { EntryGenerator, PageServerLoad } from './$types';
+
+const WIKI_ROOT = '/fr/wiki/';
+const WIKI_HOME = '/fr/wiki/quickstart/';
 
 /** Every page of both spaces, so the prerender writes all of them. */
 export const entries: EntryGenerator = async () => {
@@ -17,6 +20,9 @@ export const load: PageServerLoad = async ({ params }) => {
 	const site = await getSite();
 	const path = (params.path ?? '').replace(/^\/+|\/+$/g, '');
 	const route = `/${params.lang}/${params.space}/${path ? `${path}/` : ''}`;
+	// The wiki's root index is the folder list OpenWiki generates, a poorer door
+	// than the page every link of the site already names.
+	if (route === WIKI_ROOT) redirect(308, WIKI_HOME);
 	const page = site.pages.get(route);
 	if (!page) {
 		if (process.env.DEBUG_ROUTES)
