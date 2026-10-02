@@ -257,7 +257,8 @@ class Builder {
 		// Code, links and abbreviations already set are never re-read for identifiers.
 		const keepLinking = linkify && tag !== 'code' && tag !== 'a' && tag !== 'abbr';
 		const children = await this.children(node.children, keepLinking);
-		const traced = tag === 'p' && typeof attrs.id === 'string' ? this.traceLink(String(attrs.id)) : undefined;
+		const traced =
+			tag === 'p' && typeof attrs.id === 'string' ? this.traceLink(String(attrs.id)) : undefined;
 		if (traced) children.push({ type: 'text', value: ' ' }, traced);
 		return [{ type: 'element', tag, attrs, children }];
 	}
@@ -266,7 +267,8 @@ class Builder {
 	traceLink(anchor: string): ContentNode | undefined {
 		const id = [...this.context.definitionAnchors].find(([, value]) => value === anchor)?.[0];
 		const trace = id ? this.context.ids.get(id)?.trace : undefined;
-		if (!id || !trace || (trace.implementations.length === 0 && trace.tests.length === 0)) return undefined;
+		if (!id || !trace || (trace.implementations.length === 0 && trace.tests.length === 0))
+			return undefined;
 		const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 		const text = [
 			count(trace.implementations.length, 'emplacement', 'emplacements'),

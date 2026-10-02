@@ -177,3 +177,8 @@ frontend/.litestar.json
 
 # Build output and docs not needed to build the image
 *.md
+
+# The site's own build output and caches, rebuilt inside the image.
+frontend/build/
+frontend/.svelte-kit/
+frontend/.graph/

@@ -206,7 +206,12 @@ export type IncludeReader = (path: string) => string | undefined;
  * every marker line is left out. The include line's indentation is applied to
  * every line, so an example lands inside a tab as it would by hand.
  */
-function includeLines(indent: string, ref: string, read: IncludeReader, problems: string[]): string[] {
+function includeLines(
+	indent: string,
+	ref: string,
+	read: IncludeReader,
+	problems: string[]
+): string[] {
 	const [path, name] = ref.split(':');
 	const text = read(path);
 	if (text === undefined) {
@@ -223,7 +228,9 @@ function includeLines(indent: string, ref: string, read: IncludeReader, problems
 		}
 		lines = lines.slice(start + 1, end);
 	}
-	return lines.filter((line) => !line.includes('--8<--')).map((line) => (line.trim() ? indent + line : ''));
+	return lines
+		.filter((line) => !line.includes('--8<--'))
+		.map((line) => (line.trim() ? indent + line : ''));
 }
 
 /** Expand every include line of a page, before anything else reads it. */

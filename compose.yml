@@ -1,38 +1,35 @@
+# The production stack on a laptop, from a local piighost commit:
+#
+#   git -C ../piighost archive HEAD | tar -x -C /tmp/piighost-content
+#   docker compose up --build
+#
+# The site is on http://localhost:8080, its MCP servers under /mcp.
+
+x-build: &build
+  context: .
+  dockerfile: Dockerfile
+  additional_contexts:
+    piighost: ${PIIGHOST_EXPORT:-/tmp/piighost-content}
+  args:
+    CONTENT: piighost
+    PUBLIC_CHAT_URL: ${PUBLIC_CHAT_URL:-}
+
 services:
-  # The public entrypoint: serves the bundle and proxies /api to the API.
   web:
     build:
-      context: .
-      dockerfile: Dockerfile.web
-    # Injected into /api/ requests server-side, so the browser never sees it.
-    # `:?` on purpose: a missing key must stop the deployment, not ship an open API.
-    environment:
-      API_KEY: ${API_KEY:?set API_KEY in .env (see .env.example)}
+      <<: *build
+      target: web
     ports:
-      - "8000:8080"
-    depends_on:
-      api:
-        condition: service_healthy
+      - "${WEB_PORT:-8080}:8080"
 
-  api:
+  docs-mcp:
     build:
-      context: .
-      dockerfile: Dockerfile.api
+      <<: *build
+      target: docs-mcp
     environment:
-      # Vertical scaling: one Granian worker per core is a sane starting point.
-      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-1}
-      # The same key the guard on /api/hello checks against.
-      API_KEY: ${API_KEY:?set API_KEY in .env (see .env.example)}
-    # No `ports`: the API is reachable only by web, over the compose network.
-    expose:
-      - "8000"
-    healthcheck:
-      test:
-        - CMD
-        - python
-        - -c
-        - import urllib.request; urllib.request.urlopen("http://127.0.0.1:8000/api/health")
-      interval: 10s
-      timeout: 3s
-      retries: 5
-      start_period: 15s
+      - PIIGHOST_BASE_URL=http://localhost:8080
+
+  graph-mcp:
+    build:
+      <<: *build
+      target: graph-mcp

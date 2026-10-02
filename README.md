@@ -39,11 +39,42 @@ PIIGHOST_CONTENT=~/piighost-besoins just build           # prerender into fronte
 Diagrams are rendered once per source with mermaid-cli and the local Chromium
 (`CHROMIUM_PATH`), cached in `frontend/static/diagrams/`.
 
+## Deploy
+
+One `Dockerfile` builds the site and its two MCP servers from one build of the
+content: it clones piighost at `PIIGHOST_REF`, builds the code graph with
+graphify, renders the diagrams with Chromium, prerenders the pages and indexes
+them with Pagefind. `@piighost/ui` is not published: its packed build sits in
+`frontend/vendor/`, refreshed with `pnpm pack` in `piighost-ui`.
+
+| Target | What it serves |
+|---|---|
+| `web` | the site, behind nginx, with `/mcp` and `/mcp/code` proxied and rate limited |
+| `docs-mcp` | the MCP server over the built pages |
+| `graph-mcp` | graphify's MCP server over the code graph |
+
+`compose.prod.yml` is the Coolify stack. Its build variables are
+`PIIGHOST_REF` and `PUBLIC_CHAT_URL`, the chatbot's server, baked into the pages
+and their content policy. Only `web` gets a domain.
+
+To run the same stack from a local piighost commit:
+
+```bash
+git -C ../piighost archive HEAD | tar -x -C /tmp/piighost-content
+docker compose up --build        # http://localhost:8080
+```
+
+The `Deploy` workflow checks the content, then calls the Coolify webhook. It
+runs on a push here and on `content-updated`, which piighost sends when
+`docs/` or `openwiki/` change on master. Secrets: `COOLIFY_DEPLOY_WEBHOOK`
+and `COOLIFY_TOKEN` here, `DOCS_DISPATCH_TOKEN` in piighost.
+
+Each page carries its own content policy as a meta tag, with the hash of its
+inline bootstrap script, and nginx sends the rest of the policy as a header.
+An unknown path gets the bilingual 404 page.
+
 ## Not done yet
 
-- The backend (`backend/`, from template-litestar-svelte) is the place of the
-  public MCP (documentation and graphify) and of the chatbot, steps 2 to 4.
-- Deployment: `Dockerfile.web` still serves the template's `frontend/dist`, it
-  will serve `frontend/build`; the content policy needs the hashes of
-  SvelteKit's inline bootstrap script and `wasm-unsafe-eval` for Pagefind.
-- The `repository_dispatch` workflow that rebuilds on a change in `piighost`.
+- The backend (`backend/`, from template-litestar-svelte) is not part of the
+  stack any more: the MCP servers live in `mcp/` and graphify, the chatbot in
+  `piighost-docs-chainlit`.

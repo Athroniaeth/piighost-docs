@@ -1,0 +1,62 @@
+name: Deploy
+
+# The site is rebuilt when it changes, and when its content changes in piighost:
+# piighost's docs-dispatch workflow sends content-updated with the commit.
+on:
+  push:
+    branches: [main]
+  repository_dispatch:
+    types: [content-updated]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check the content, then deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The dispatch payload is the sender's to write: only a full commit sha
+      # is taken from it, anything else reads master.
+      - name: Pick the content commit
+        id: ref
+        run: |
+          if printf %s "$SHA" | grep -Eq '^[0-9a-f]{40}$'; then ref="$SHA"; else ref=master; fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+        env:
+          SHA: ${{ github.event.client_payload.sha }}
+
+      # piighost is public: read without a token.
+      - uses: actions/checkout@v4
+        with:
+          repository: Athroniaeth/piighost
+          ref: ${{ steps.ref.outputs.ref }}
+          path: content/piighost
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - run: pnpm -C frontend install --frozen-lockfile
+
+      # A broken link, a missing image, an identifier the wiki does not define
+      # or defines twice: reported here, readably, before Coolify builds.
+      - name: Check the content
+        run: pnpm -C frontend content:check
+        env:
+          PIIGHOST_CONTENT: ${{ github.workspace }}/content/piighost
+
+      # Coolify builds the images itself, from master: the newest content.
+      - name: Deploy
+        run: curl -fsS "$COOLIFY_DEPLOY_WEBHOOK" -H "Authorization: Bearer $COOLIFY_TOKEN"
+        env:
+          COOLIFY_DEPLOY_WEBHOOK: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}

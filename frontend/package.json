@@ -3,6 +3,7 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"packageManager": "pnpm@12.3.4",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && pagefind --site build",
@@ -66,6 +67,6 @@
 	},
 	"dependencies": {
 		"@lucide/svelte": "^1.49.0",
-		"@piighost/ui": "link:../../piighost-ui"
+		"@piighost/ui": "file:vendor/piighost-ui-0.1.0.tgz"
 	}
 }
