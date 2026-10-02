@@ -4,8 +4,12 @@
 	import { Button, GithubIcon, LangMenu, SiteFooter, SiteNav, ThemeToggle } from '@piighost/ui';
 	import Search from '#lib/components/Search.svelte';
 	import { labels } from '#lib/i18n.js';
+	import { PUBLIC_CHAT_URL } from '$app/env/public';
 
 	let { children } = $props();
+
+	/** The chatbot, Chainlit's copilot widget, when the build names its server. */
+	const chatUrl = PUBLIC_CHAT_URL;
 
 	const lang = $derived(page.url.pathname.startsWith('/en') ? 'en' : 'fr');
 	const t = $derived(labels(lang));
@@ -32,6 +36,12 @@
 		}
 	]);
 </script>
+
+<svelte:head>
+	{#if chatUrl}
+		<script src="/chat-widget.js" data-server={chatUrl} defer></script>
+	{/if}
+</svelte:head>
 
 <a
 	href="#content"
