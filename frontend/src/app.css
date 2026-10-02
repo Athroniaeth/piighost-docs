@@ -58,3 +58,22 @@
 	outline-offset: 0.25rem;
 	border-radius: var(--radius);
 }
+
+/* After a rule, the link to its trace: where it lives in the code, what tests it. */
+.prose-piighost a.trace-link {
+	display: inline-block;
+	margin-inline-start: 0.25rem;
+	padding: 0 0.4rem;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	font-family: var(--font-mono);
+	font-size: 0.75rem;
+	color: var(--muted-foreground);
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.prose-piighost a.trace-link:hover {
+	border-color: var(--primary);
+	color: var(--primary);
+}

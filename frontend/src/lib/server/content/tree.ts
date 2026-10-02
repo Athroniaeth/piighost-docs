@@ -257,13 +257,43 @@ class Builder {
 		// Code, links and abbreviations already set are never re-read for identifiers.
 		const keepLinking = linkify && tag !== 'code' && tag !== 'a' && tag !== 'abbr';
 		const children = await this.children(node.children, keepLinking);
+		const traced = tag === 'p' && typeof attrs.id === 'string' ? this.traceLink(String(attrs.id)) : undefined;
+		if (traced) children.push({ type: 'text', value: ' ' }, traced);
 		return [{ type: 'element', tag, attrs, children }];
 	}
 
-	/** The id a block defines, when it starts with a definition of this page. */
+	/** After a rule's definition, a link to what implements and tests it. */
+	traceLink(anchor: string): ContentNode | undefined {
+		const id = [...this.context.definitionAnchors].find(([, value]) => value === anchor)?.[0];
+		const trace = id ? this.context.ids.get(id)?.trace : undefined;
+		if (!id || !trace || (trace.implementations.length === 0 && trace.tests.length === 0)) return undefined;
+		const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+		const text = [
+			count(trace.implementations.length, 'emplacement', 'emplacements'),
+			count(trace.tests.length, 'test', 'tests')
+		].join(' · ');
+		return {
+			type: 'element',
+			tag: 'a',
+			attrs: { href: `/ids/${id}/`, class: 'trace-link' },
+			children: [{ type: 'text', value: text }]
+		};
+	}
+
+	/** The anchors already placed: an id is unique in a page. */
+	placed = new Set<string>();
+
+	/**
+	 * The id a block defines, when it starts with a definition of this page and
+	 * that anchor is not placed yet: the rule's paragraph comes before its row
+	 * in "Où vivent les règles", which keeps no id.
+	 */
 	definitionFor(text: string): string | undefined {
 		const lead = text.trim().match(ID_PATTERN_AT_START)?.[0];
-		return lead ? this.context.definitionAnchors.get(lead) : undefined;
+		const anchor = lead ? this.context.definitionAnchors.get(lead) : undefined;
+		if (!anchor || this.placed.has(anchor)) return undefined;
+		this.placed.add(anchor);
+		return anchor;
 	}
 }
 

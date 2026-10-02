@@ -72,6 +72,10 @@ test:
 build:
     pnpm -C frontend build
 
+# Build the code graph of piighost with graphify (local, no API key), for the rule traceability.
+graph:
+    pnpm -C frontend graph
+
 # Read the whole content as the build does, and fail on a broken link or an unknown identifier.
 content-check:
     pnpm -C frontend content:check

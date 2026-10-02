@@ -3,9 +3,9 @@ import { getSite } from '#lib/server/content/site.js';
 import type { EntryGenerator, PageServerLoad } from './$types';
 
 /**
- * /ids/BR-MSG-05/ stands for the rule wherever its page moves: the URL to cite
- * from code, issues and the chatbot. A page that names the rule and sends the
- * reader on, rather than an HTTP redirect, so a shared link previews the rule.
+ * /ids/BR-MSG-05/ is the card of an identifier, the URL to cite from code,
+ * issues and the chatbot: what it says, the page that defines it, and for a
+ * rule the code that implements it and the tests that call it.
  */
 export const entries: EntryGenerator = async () =>
 	[...(await getSite()).ids.keys()].map((id) => ({ id }));

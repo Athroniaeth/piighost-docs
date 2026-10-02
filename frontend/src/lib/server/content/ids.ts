@@ -9,6 +9,7 @@
 import { toString } from 'mdast-util-to-string';
 import { visit } from 'unist-util-visit';
 import type { Root, Paragraph, TableRow, Heading } from 'mdast';
+import type { Trace } from './traceability';
 
 export const ID_PATTERN =
 	/\b(?:(?:DPO|DEV|OPS|USER)-\d+|BR-[A-Z]+-\d{2}|AT-(?:DPO|DEV|OPS|USER)-\d+-\d+|ECART-\d{2})\b/g;
@@ -20,6 +21,8 @@ export interface IdEntry {
 	summary: string;
 	/** The page that defines it, as a route. */
 	page: string;
+	/** For a rule: the code that implements it and the tests that call it. */
+	trace?: Trace;
 }
 
 export type IdIndex = Map<string, IdEntry>;

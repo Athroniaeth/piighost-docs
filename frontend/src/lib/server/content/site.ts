@@ -19,6 +19,7 @@ import { parseMarkdown } from './markdown';
 import { buildTree } from './tree';
 import { collectDefinitions, anchorOf, type IdIndex } from './ids';
 import { renderDiagram, closeDiagrams } from './diagrams';
+import { traceRules } from './traceability';
 
 export type Space = 'guide' | 'wiki';
 
@@ -231,6 +232,12 @@ async function load(): Promise<Site> {
 			anchors.set(entry.id, anchorOf(entry.id));
 		}
 		definedBy.set(draft.route, anchors);
+	}
+
+	// The rules the wiki locates, joined to the code graph when it was built.
+	for (const [rule, trace] of traceRules(drafts.filter((item) => item.space === 'wiki').map((item) => item.mdast))) {
+		const entry = ids.get(rule);
+		if (entry) entry.trace = trace;
 	}
 
 	const nav = new Map<string, TreeNode[]>();
