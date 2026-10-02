@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="%lang%" class="dark">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="text-scale" content="scale" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
+		<!-- Dark unless the visitor chose light, set before first paint. A file and
+		     not an inline script: the policy is script-src 'self'. -->
+		<script src="%sveltekit.assets%/theme.js"></script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div class="contents">%sveltekit.body%</div>
+	</body>
+</html>

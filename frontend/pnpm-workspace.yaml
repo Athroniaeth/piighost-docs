@@ -1,0 +1,4 @@
+allowBuilds:
+  esbuild: true
+  # Downloads its own Chrome: the build uses the Chromium already installed.
+  puppeteer: false

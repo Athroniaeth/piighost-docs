@@ -1,0 +1,60 @@
+/* The docs site's stylesheet: the shared library first, then what only
+   documentation needs. Never an inline style: the policy is style-src 'self'. */
+@import '@piighost/ui/styles.css';
+
+/* Tables wider than the column scroll on their own, never the page. */
+.prose-piighost .wide-table > table,
+.prose-piighost table.table-scroll {
+	display: block;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.prose-piighost .figure-caption {
+	margin-block-start: 0.5rem;
+	text-align: center;
+	font-size: 0.875rem;
+	color: var(--muted-foreground);
+}
+
+/* The rating scale of the security tables, from best to worst. The charter
+   allows the primary and the error colour outside data, and --warning for a
+   state: the scale uses them in decreasing order. */
+.prose-piighost .security-table td.c-blue,
+.prose-piighost .sec-legend.c-blue {
+	background-color: color-mix(in oklch, var(--primary) 24%, transparent);
+}
+.prose-piighost .security-table td.c-green,
+.prose-piighost .sec-legend.c-green {
+	background-color: color-mix(in oklch, var(--primary) 10%, transparent);
+}
+.prose-piighost .security-table td.c-yellow,
+.prose-piighost .sec-legend.c-yellow {
+	background-color: color-mix(in oklch, var(--warning) 22%, transparent);
+}
+.prose-piighost .security-table td.c-red,
+.prose-piighost .sec-legend.c-red {
+	background-color: color-mix(in oklch, var(--destructive) 22%, transparent);
+}
+
+.prose-piighost .sec-legend {
+	display: inline-block;
+	padding: 0.05rem 0.45rem;
+	border-radius: var(--radius);
+	font-size: 0.85em;
+	color: var(--foreground);
+}
+
+.prose-piighost abbr[title] {
+	text-decoration: underline dotted;
+	text-underline-offset: 0.2em;
+	cursor: help;
+}
+
+/* A definition the URL points at: the reader sees which block it is. */
+.prose-piighost :target {
+	scroll-margin-block-start: 5rem;
+	outline: 2px solid var(--ring);
+	outline-offset: 0.25rem;
+	border-radius: var(--radius);
+}
