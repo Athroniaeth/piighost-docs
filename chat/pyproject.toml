@@ -1,0 +1,10 @@
+[project]
+name = "piighost-docs-chat"
+version = "0.1.0"
+description = "A Chainlit chat over the piighost documentation and code, through their MCP servers."
+requires-python = ">=3.13,<3.14"
+# requests: literalai, which chainlit imports, needs it without declaring it.
+dependencies = ["chainlit>=2.12", "mcp>=1.30,<2", "openai>=2", "requests>=2.32"]
+
+[tool.uv]
+package = false
