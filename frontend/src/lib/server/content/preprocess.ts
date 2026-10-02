@@ -17,6 +17,7 @@
  *   *text*                    :::caption            a figure caption
  *   { .figure-caption }
  *   *[ABBR]: definition       collected, removed    an abbreviation
+ *   --8<-- "snippets/x.py:run"  the lines of that file or section, first of all
  *
  * Code fences are copied untouched: a line inside a fence is never read as one
  * of the constructs above.
@@ -192,6 +193,48 @@ function convert(lines: string[]): string[] {
 		index++;
 	}
 	return out;
+}
+
+const INCLUDE = /^(\s*)--8<--\s+"([^"]+)"\s*$/;
+
+/** Read a file to include, by the path a page writes; undefined when it does not exist. */
+export type IncludeReader = (path: string) => string | undefined;
+
+/**
+ * The lines of an included file, or of one section of it, as pymdownx.snippets
+ * gives them: `# --8<-- [start:name]` and `[end:name]` delimit a section, and
+ * every marker line is left out. The include line's indentation is applied to
+ * every line, so an example lands inside a tab as it would by hand.
+ */
+function includeLines(indent: string, ref: string, read: IncludeReader, problems: string[]): string[] {
+	const [path, name] = ref.split(':');
+	const text = read(path);
+	if (text === undefined) {
+		problems.push(`missing include ${ref}`);
+		return [];
+	}
+	let lines = text.replace(/\n$/, '').split('\n');
+	if (name) {
+		const start = lines.findIndex((line) => line.includes(`--8<-- [start:${name}]`));
+		const end = lines.findIndex((line) => line.includes(`--8<-- [end:${name}]`));
+		if (start < 0 || end < start) {
+			problems.push(`missing section ${ref}`);
+			return [];
+		}
+		lines = lines.slice(start + 1, end);
+	}
+	return lines.filter((line) => !line.includes('--8<--')).map((line) => (line.trim() ? indent + line : ''));
+}
+
+/** Expand every include line of a page, before anything else reads it. */
+export function expandIncludes(source: string, read: IncludeReader, problems: string[]): string {
+	return source
+		.split('\n')
+		.flatMap((line) => {
+			const include = INCLUDE.exec(line);
+			return include ? includeLines(include[1], include[2], read, problems) : [line];
+		})
+		.join('\n');
 }
 
 /** Preprocess one page, given the abbreviations its language appends to every page. */

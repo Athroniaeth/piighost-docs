@@ -14,7 +14,7 @@ import type { Root as MdastRoot } from 'mdast';
 import type { Root as HastRoot } from 'hast';
 import type { ContentNode, TocEntry, TreeNode, NavLink } from '@piighost/ui';
 import { CONTENT_ROOT, LANGUAGES, REPOSITORY, BRANCH, type Language } from './config';
-import { preprocess, readAbbreviations } from './preprocess';
+import { expandIncludes, preprocess, readAbbreviations } from './preprocess';
 import { parseMarkdown } from './markdown';
 import { buildTree } from './tree';
 import { collectDefinitions, anchorOf, type IdIndex } from './ids';
@@ -186,7 +186,17 @@ async function load(): Promise<Site> {
 		abbreviations: Map<string, string>
 	) => {
 		const file = join(CONTENT_ROOT, repoPath);
-		const source = readFileSync(file, 'utf8');
+		const written = readFileSync(file, 'utf8');
+		// Includes resolve as Zensical's base_path does: the page's language folder, then docs/.
+		const bases = space === 'guide' ? [join(CONTENT_ROOT, 'docs', lang), join(CONTENT_ROOT, 'docs')] : [join(CONTENT_ROOT, 'openwiki')];
+		const read = (path: string) => {
+			const found = bases.map((base) => join(base, path)).find((candidate) => existsSync(candidate));
+			return found ? readFileSync(found, 'utf8') : undefined;
+		};
+		const includeProblems: string[] = [];
+		// The source an assistant reads (index.md) is the page as a reader sees it, examples included.
+		const source = expandIncludes(written, read, includeProblems);
+		for (const problem of includeProblems) problems.push(`${repoPath}: ${problem}`);
 		const pre = preprocess(source, abbreviations);
 		const parsed = await parseMarkdown(pre.markdown);
 		drafts.push({
