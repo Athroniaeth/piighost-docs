@@ -64,10 +64,11 @@ git -C ../piighost archive HEAD | tar -x -C /tmp/piighost-content
 docker compose up --build        # http://localhost:8080
 ```
 
-The `Deploy` workflow checks the content, then calls the Coolify webhook. It
-runs on a push here and on `content-updated`, which piighost sends when
-`docs/` or `openwiki/` change on master. Secrets: `COOLIFY_DEPLOY_WEBHOOK`
-and `COOLIFY_TOKEN` here, `DOCS_DISPATCH_TOKEN` in piighost.
+The `Deploy` workflow checks the content of piighost's master, then calls the
+Coolify webhook, on a push here. piighost's own Documentation workflow calls
+the same webhook when `docs/` or `openwiki/` change on master, and the image
+build stops on a broken page. Both repositories hold `COOLIFY_DEPLOY_WEBHOOK`
+and `COOLIFY_TOKEN`.
 
 Each page carries its own content policy as a meta tag, with the hash of its
 inline bootstrap script, and nginx sends the rest of the policy as a header.
@@ -75,6 +76,6 @@ An unknown path gets the bilingual 404 page.
 
 ## Not done yet
 
-- The backend (`backend/`, from template-litestar-svelte) is not part of the
-  stack any more: the MCP servers live in `mcp/` and graphify, the chatbot in
-  `piighost-docs-chainlit`.
+- The backend (`backend/`, `Dockerfile.api`, from template-litestar-svelte) is
+  not part of the stack any more: the MCP servers live in `mcp/` and graphify,
+  the chatbot in `piighost-docs-chainlit`. It is to be removed.

@@ -1,55 +1,42 @@
 name: CI
 
-# Gitflow: validate every PR into and every push to the long-lived branches.
-# Feature/release/hotfix branches are covered via their PRs.
+# What ships: the frontend that builds the site, and the docs MCP server. The
+# content itself is checked by the Deploy workflow, against piighost.
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
-# Cancel superseded runs on the same ref (e.g. a new push to a PR branch).
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # The Litestar CLI (assets install / generate-types) must load the app to expose
-  # the Vite plugin commands; normally set via .env, which is absent in CI.
-  LITESTAR_APP: backend.app:app
-  PYTHONPATH: .
-
 jobs:
   check:
-    name: Lint + test
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
+      - uses: astral-sh/setup-uv@v6
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+      - name: The MCP server
+        run: |
+          uvx ruff format --check mcp
+          uvx ruff check mcp
 
-      - name: Install Node
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
 
-      - name: Install just
-        uses: extractions/setup-just@v2
+      - run: pnpm -C frontend install --frozen-lockfile
 
-      - name: Install dependencies (backend + frontend)
-        run: just install
-
-      # `just check` starts with check-types, which regenerates openapi.json and
-      # fails on any diff: the contract must be committed alongside the handlers.
-      - name: Contract check + lint + test
-        run: just check
+      - name: The frontend
+        run: |
+          pnpm -C frontend run lint
+          pnpm -C frontend run check

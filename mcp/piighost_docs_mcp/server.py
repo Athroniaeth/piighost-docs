@@ -53,7 +53,7 @@ def _terms(text: str) -> list[str]:
 
 @dataclass
 class Section:
-    page: "Page"
+    page: Page
     heading: str
     text: str
     terms: Counter[str] = field(default_factory=Counter)
@@ -110,7 +110,9 @@ def _sections(page: Page) -> list[Section]:
             continue
         section = Section(page, heading, text)
         # A title and a heading say more about a section than a word of its text.
-        section.terms = Counter(_terms(text) + 3 * _terms(heading) + 2 * _terms(page.title))
+        section.terms = Counter(
+            _terms(text) + 3 * _terms(heading) + 2 * _terms(page.title)
+        )
         sections.append(section)
     return sections
 
@@ -125,7 +127,7 @@ class Index:
         self.frequency: Counter[str] = Counter()
         self.average = 1.0
 
-    def fresh(self) -> "Index":
+    def fresh(self) -> Index:
         """Rebuild when the site was rebuilt since the last call."""
         marker = SITE_DIR / "llms.txt"
         stamp = marker.stat().st_mtime if marker.exists() else 0.0
@@ -135,26 +137,40 @@ class Index:
         return self
 
     def _build(self) -> None:
-        pages = [page for path in sorted(SITE_DIR.rglob("index.md")) if (page := _page(path))]
+        pages = [
+            page for path in sorted(SITE_DIR.rglob("index.md")) if (page := _page(path))
+        ]
         self.pages = {page.path: page for page in pages}
         self.sections = [section for page in pages for section in _sections(page)]
-        self.frequency = Counter(term for section in self.sections for term in set(section.terms))
+        self.frequency = Counter(
+            term for section in self.sections for term in set(section.terms)
+        )
         lengths = [sum(section.terms.values()) for section in self.sections]
         self.average = sum(lengths) / max(len(lengths), 1)
 
-    def search(self, query: str, lang: str | None, space: str | None, limit: int) -> list[tuple[float, Section]]:
+    def search(
+        self, query: str, lang: str | None, space: str | None, limit: int
+    ) -> list[tuple[float, Section]]:
         terms = set(_terms(query))
         count = len(self.sections)
         scored = []
         for section in self.sections:
-            if (lang and section.page.lang != lang) or (space and section.page.space != space):
+            if (lang and section.page.lang != lang) or (
+                space and section.page.space != space
+            ):
                 continue
             length = sum(section.terms.values())
             score = 0.0
             for term in terms & section.terms.keys():
-                idf = math.log(1 + (count - self.frequency[term] + 0.5) / (self.frequency[term] + 0.5))
+                idf = math.log(
+                    1
+                    + (count - self.frequency[term] + 0.5)
+                    / (self.frequency[term] + 0.5)
+                )
                 tf = section.terms[term]
-                score += idf * tf * 2.5 / (tf + 1.5 * (0.25 + 0.75 * length / self.average))
+                score += (
+                    idf * tf * 2.5 / (tf + 1.5 * (0.25 + 0.75 * length / self.average))
+                )
             if score:
                 scored.append((score, section))
         scored.sort(key=lambda item: -item[0])
@@ -184,11 +200,17 @@ def _excerpt(section: Section, query: str, width: int = 420) -> str:
     folded = _fold(text)
     positions = [folded.find(term) for term in _terms(query) if term in folded]
     start = max(min(positions, default=0) - width // 4, 0)
-    return ("…" if start else "") + text[start : start + width] + ("…" if start + width < len(text) else "")
+    return (
+        ("…" if start else "")
+        + text[start : start + width]
+        + ("…" if start + width < len(text) else "")
+    )
 
 
 @mcp.tool()
-def search_docs(query: str, lang: str | None = None, space: str | None = None, limit: int = 8) -> list[dict[str, Any]]:
+def search_docs(
+    query: str, lang: str | None = None, space: str | None = None, limit: int = 8
+) -> list[dict[str, Any]]:
     """Search the piighost documentation, ranked by relevance.
 
     query: words or an identifier (BR-MSG-05, DPO-9, load_thread_pipeline).
@@ -227,13 +249,20 @@ def read_page(path: str) -> str:
 
 
 @mcp.tool()
-def list_pages(lang: str | None = None, space: str | None = None) -> list[dict[str, str]]:
+def list_pages(
+    lang: str | None = None, space: str | None = None
+) -> list[dict[str, str]]:
     """List the pages of the documentation, with their path, title and description.
 
     lang: "fr" or "en". space: "guide" or "wiki". Both are optional filters.
     """
     return [
-        {"path": page.path, "title": page.title, "description": page.description, "url": page.url}
+        {
+            "path": page.path,
+            "title": page.title,
+            "description": page.description,
+            "url": page.url,
+        }
         for page in INDEX.fresh().pages.values()
         if (not lang or page.lang == lang) and (not space or page.space == space)
     ]
@@ -273,9 +302,13 @@ def get_id(identifier: str) -> dict[str, Any]:
     name = identifier.strip().upper()
     card = SITE_DIR / "ids" / name / "__data.json"
     if not card.is_file():
-        raise ValueError(f"no identifier {name!r}; search_docs finds the ones a page names")
+        raise ValueError(
+            f"no identifier {name!r}; search_docs finds the ones a page names"
+        )
     nodes = json.loads(card.read_text(encoding="utf-8"))["nodes"]
-    entry = next(_unflatten(node["data"]) for node in nodes if node and node.get("data"))["entry"]
+    entry = next(
+        _unflatten(node["data"]) for node in nodes if node and node.get("data")
+    )["entry"]
     entry["url"] = BASE_URL + entry.pop("href")
     entry["page"] = BASE_URL + entry["page"]
     return entry

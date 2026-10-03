@@ -1,12 +1,10 @@
 name: Deploy
 
-# The site is rebuilt when it changes, and when its content changes in piighost:
-# piighost's docs-dispatch workflow sends content-updated with the commit.
+# The site is rebuilt when it changes here. A change of its content in piighost
+# calls the same Coolify webhook from piighost's own Documentation workflow.
 on:
   push:
     branches: [main]
-  repository_dispatch:
-    types: [content-updated]
   workflow_dispatch:
 
 concurrency:
@@ -20,21 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The dispatch payload is the sender's to write: only a full commit sha
-      # is taken from it, anything else reads master.
-      - name: Pick the content commit
-        id: ref
-        run: |
-          if printf %s "$SHA" | grep -Eq '^[0-9a-f]{40}$'; then ref="$SHA"; else ref=master; fi
-          echo "ref=$ref" >> "$GITHUB_OUTPUT"
-        env:
-          SHA: ${{ github.event.client_payload.sha }}
-
       # piighost is public: read without a token.
       - uses: actions/checkout@v4
         with:
           repository: Athroniaeth/piighost
-          ref: ${{ steps.ref.outputs.ref }}
           path: content/piighost
 
       - uses: pnpm/action-setup@v4
