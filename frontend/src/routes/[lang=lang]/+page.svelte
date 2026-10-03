@@ -11,7 +11,7 @@
 	/** Who expects what from piighost is business content: each card opens its
 	 *  section of the needs page in the reader's language, which links on to the
 	 *  guide pages of that profile. */
-	const NEEDS = $derived(`/${lang}/wiki/needs-by-profile/#`);
+	const NEEDS = $derived(`/${lang}/domain/needs-by-profile/#`);
 	const profiles = $derived(
 		lang === 'fr'
 			? [
@@ -80,7 +80,15 @@
 <main id="content" class="mx-auto max-w-5xl space-y-14 px-6 py-14">
 	<header class="feuille space-y-5">
 		<h1 class="text-4xl font-bold tracking-[-0.02em] sm:text-5xl">{t.homeTitle}</h1>
-		<p class="max-w-2xl text-lg text-muted-foreground">{t.homeLead}</p>
+		<div class="max-w-2xl space-y-3 text-lg text-muted-foreground">
+			<p>{t.homeLead}</p>
+			<p>{t.homeTwoDocs}</p>
+			<ul class="list-disc space-y-1 pl-6">
+				<li><strong class="text-foreground">{t.guideArticle}</strong>, {t.homeGuideItem}</li>
+				<li><strong class="text-foreground">{t.domainArticle}</strong>, {t.homeDomainItem}</li>
+			</ul>
+			<p>{t.homeNewPractice}</p>
+		</div>
 		<div class="max-w-md"><InstallTabs copyLabel={t.copy} copiedLabel={t.copied} /></div>
 	</header>
 
@@ -94,12 +102,12 @@
 			<span class="text-sm text-muted-foreground">{t.guideDescription}</span>
 		</a>
 		<a
-			href="/{lang}/wiki/quickstart/"
+			href="/{lang}/domain/quickstart/"
 			class="group flex flex-col gap-2 rounded-lg border bg-card p-6 transition-colors hover:border-primary"
 		>
 			<Users class="size-6 text-primary" aria-hidden="true" />
-			<span class="text-xl font-semibold">{t.wiki}</span>
-			<span class="text-sm text-muted-foreground">{t.wikiDescription}</span>
+			<span class="text-xl font-semibold">{t.domain}</span>
+			<span class="text-sm text-muted-foreground">{t.domainDescription}</span>
 		</a>
 	</section>
 

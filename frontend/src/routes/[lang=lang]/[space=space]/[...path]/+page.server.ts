@@ -17,9 +17,9 @@ export const load: PageServerLoad = async ({ params }) => {
 	const site = await getSite();
 	const path = (params.path ?? '').replace(/^\/+|\/+$/g, '');
 	const route = `/${params.lang}/${params.space}/${path ? `${path}/` : ''}`;
-	// The wiki's root index is the folder list OpenWiki generates, a poorer door
+	// The domain documentation's root index is the folder list OpenWiki generates, a poorer door
 	// than the page every link of the site already names.
-	if (route === `/${params.lang}/wiki/`) redirect(308, `/${params.lang}/wiki/quickstart/`);
+	if (route === `/${params.lang}/domain/`) redirect(308, `/${params.lang}/domain/quickstart/`);
 	const page = site.pages.get(route);
 	if (!page) {
 		if (process.env.DEBUG_ROUTES)

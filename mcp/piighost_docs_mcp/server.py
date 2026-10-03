@@ -26,7 +26,7 @@ BASE_URL = os.environ.get("PIIGHOST_BASE_URL", "https://docs.piighost.dev").rstr
 """Where the pages are read, for the links an answer cites."""
 
 LANGUAGES = ("fr", "en")
-SPACES = ("guide", "wiki")
+SPACES = ("guide", "domain")
 
 TOKEN = re.compile(r"[a-z0-9]+(?:[-_.][a-z0-9]+)*")
 """A search term: a word, or an identifier such as br-msg-05 or load_pipeline."""
@@ -183,7 +183,7 @@ mcp = FastMCP(
     "piighost-docs",
     instructions=(
         "The piighost documentation: a technical guide (how to use the library, its "
-        "reference) and a business wiki (the rules each process follows, as BR-, DPO-, "
+        "reference) and a domain documentation (the rules each process follows, as BR-, DPO-, "
         "DEV-, OPS-, USER- identifiers, and where they live in the code), in French and "
         "English. Search first, then read the pages you cite, and give their URLs."
     ),
@@ -214,8 +214,8 @@ def search_docs(
     """Search the piighost documentation, ranked by relevance.
 
     query: words or an identifier (BR-MSG-05, DPO-9, load_thread_pipeline).
-    lang: "fr" or "en", both when omitted. The guide and the wiki exist in both.
-    space: "guide" for the technical guide, "wiki" for the business wiki, both when omitted.
+    lang: "fr" or "en", both when omitted. Both documentations exist in both.
+    space: "guide" for the technical documentation, "domain" for the domain documentation, both when omitted.
     Returns, per matching section, the page title, the section heading, the page path
     (for read_page), its URL and an excerpt.
     """
@@ -237,7 +237,7 @@ def search_docs(
 def read_page(path: str) -> str:
     """Read one page of the documentation in full, as Markdown.
 
-    path: a path search_docs or list_pages gave ("en/wiki/processes/protect-a-message"),
+    path: a path search_docs or list_pages gave ("en/domain/processes/protect-a-message"),
     or the page's URL.
     """
     key = path.removeprefix(BASE_URL).strip("/").removesuffix("/index.md")
@@ -254,7 +254,7 @@ def list_pages(
 ) -> list[dict[str, str]]:
     """List the pages of the documentation, with their path, title and description.
 
-    lang: "fr" or "en". space: "guide" or "wiki". Both are optional filters.
+    lang: "fr" or "en". space: "guide" or "domain". Both are optional filters.
     """
     return [
         {
@@ -293,7 +293,7 @@ def _unflatten(data: list[Any]) -> Any:
 
 @mcp.tool()
 def get_id(identifier: str) -> dict[str, Any]:
-    """Look up an identifier of the wiki: a rule (BR-MSG-05), a need (DPO-9, DEV-10,
+    """Look up an identifier of the domain documentation: a rule (BR-MSG-05), a need (DPO-9, DEV-10,
     OPS-8, USER-6), an acceptance test (AT-DEV-10-1) or a gap (ECART-09).
 
     Returns what it says, the page that defines it and, for a rule, where it lives

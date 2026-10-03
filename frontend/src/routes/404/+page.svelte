@@ -15,8 +15,8 @@
 		</p>
 		<p class="flex flex-wrap gap-x-6 gap-y-2">
 			<a class="text-primary underline-offset-4 hover:underline" href="/fr/guide/">Le guide</a>
-			<a class="text-primary underline-offset-4 hover:underline" href="/fr/wiki/quickstart/"
-				>Le wiki métier</a
+			<a class="text-primary underline-offset-4 hover:underline" href="/fr/domain/quickstart/"
+				>La documentation métier</a
 			>
 		</p>
 	</section>
@@ -28,8 +28,8 @@
 		</p>
 		<p class="flex flex-wrap gap-x-6 gap-y-2">
 			<a class="text-primary underline-offset-4 hover:underline" href="/en/guide/">The guide</a>
-			<a class="text-primary underline-offset-4 hover:underline" href="/en/wiki/quickstart/"
-				>The business wiki</a
+			<a class="text-primary underline-offset-4 hover:underline" href="/en/domain/quickstart/"
+				>The domain documentation</a
 			>
 		</p>
 	</section>

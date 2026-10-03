@@ -4,6 +4,6 @@ import { defineParams } from '@sveltejs/kit/params';
 export const params = defineParams({
 	/** The two languages of the site. */
 	lang: (param: string) => (param === 'fr' || param === 'en' ? param : undefined),
-	/** The two spaces: the technical guide and the business wiki. */
-	space: (param: string) => (param === 'guide' || param === 'wiki' ? param : undefined)
+	/** The two spaces: the technical documentation and the domain documentation. */
+	space: (param: string) => (param === 'guide' || param === 'domain' ? param : undefined)
 });

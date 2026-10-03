@@ -1,12 +1,12 @@
 /** The interface labels, written in both languages as the charter asks. */
 export const LABELS = {
 	fr: {
-		guide: 'Guide technique',
-		guideShort: 'Guide',
+		guide: 'Documentation technique',
+		guideShort: 'Technique',
 		guideDescription: 'Tutoriels, recettes, référence et concepts',
-		wiki: 'Wiki métier',
-		wikiShort: 'Wiki',
-		wikiDescription: 'Besoins par profil, processus, règles et tests',
+		domain: 'Documentation métier',
+		domainShort: 'Métier',
+		domainDescription: 'Besoins par profil, processus, règles et tests',
 		hub: 'Hub',
 		site: 'Site',
 		github: 'GitHub',
@@ -33,15 +33,24 @@ export const LABELS = {
 		code: 'Code',
 		homeTitle: 'Documentation piighost',
 		homeLead:
-			'La documentation technique et le wiki métier de piighost, au même endroit : comment l’utiliser, et ce que chaque profil peut en attendre.'
+			'piighost protège les données confidentielles dans les conversations avec un LLM. Il remplace chaque valeur sensible par un jeton avant l’envoi au modèle, puis la restaure dans la réponse.',
+		homeTwoDocs:
+			'Ce projet se veut open source et communautaire. Il propose donc deux documentations :',
+		homeGuideItem: 'pour les développeurs qui installent, intègrent et configurent piighost.',
+		homeDomainItem:
+			'pour définir ensemble les règles de la dé-identification : ce que fait chaque traitement, et les tests qui le vérifient.',
+		homeNewPractice:
+			'Dé-identifier une conversation avec un LLM est une pratique encore nouvelle, et ses règles ne sont écrites nulle part. La documentation métier est l’endroit où les proposer et les discuter.',
+		guideArticle: 'une documentation technique',
+		domainArticle: 'une documentation métier'
 	},
 	en: {
-		guide: 'Technical guide',
-		guideShort: 'Guide',
+		guide: 'Technical docs',
+		guideShort: 'Technical',
 		guideDescription: 'Tutorials, recipes, reference and concepts',
-		wiki: 'Business wiki',
-		wikiShort: 'Wiki',
-		wikiDescription: 'Needs by profile, processes, rules and tests',
+		domain: 'Domain docs',
+		domainShort: 'Domain',
+		domainDescription: 'Needs by profile, processes, rules and tests',
 		hub: 'Hub',
 		site: 'Site',
 		github: 'GitHub',
@@ -68,7 +77,16 @@ export const LABELS = {
 		code: 'Code',
 		homeTitle: 'piighost documentation',
 		homeLead:
-			'The technical documentation and the business wiki of piighost, in one place: how to use it, and what each profile can expect from it.'
+			'piighost protects confidential data in conversations with an LLM. It replaces each sensitive value with a placeholder before the model sees it, then restores it in the reply.',
+		homeTwoDocs:
+			'This project aims to be open source and community-driven, so it has two sets of documentation:',
+		homeGuideItem: 'for developers who install, integrate and configure piighost.',
+		homeDomainItem:
+			'to define together the rules of de-identification: what each process does, and the tests that check it.',
+		homeNewPractice:
+			'De-identifying a conversation with an LLM is still a new practice, and its rules are written down nowhere. The domain documentation is where to propose and discuss them.',
+		guideArticle: 'technical documentation',
+		domainArticle: 'domain documentation'
 	}
 } as const;
 

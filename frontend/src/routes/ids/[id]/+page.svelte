@@ -90,8 +90,8 @@
 				{@render list('Used by', Workflow, trace.callers, 'No caller found.')}
 			</div>
 			<p class="text-sm text-muted-foreground">
-				Read from the code graph graphify builds, at the places the wiki gives. A test that goes
-				through another function does not show here.
+				Read from the code graph graphify builds, at the places the domain documentation gives. A
+				test that goes through another function does not show here.
 			</p>
 		{:else}
 			<p class="text-sm text-muted-foreground">

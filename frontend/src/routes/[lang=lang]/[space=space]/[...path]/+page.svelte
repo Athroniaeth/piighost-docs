@@ -6,7 +6,7 @@
 
 	const lang = $derived(data.page.route.startsWith('/en/') ? 'en' : 'fr');
 	const t = $derived(labels(lang));
-	const isWiki = $derived(data.page.route.includes('/wiki/'));
+	const isDomain = $derived(data.page.route.includes('/domain/'));
 </script>
 
 <svelte:head>
@@ -28,10 +28,10 @@
 <div
 	class="mx-auto grid max-w-[84rem] gap-8 px-6 py-8 lg:grid-cols-[14rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,1fr)_12rem]"
 >
-	<aside class="hidden lg:block" aria-label={isWiki ? t.wiki : t.guide}>
+	<aside class="hidden lg:block" aria-label={isDomain ? t.domain : t.guide}>
 		<div class="sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto pe-2 pb-8">
 			<p class="mb-3 px-2 text-xs font-semibold text-muted-foreground">
-				{isWiki ? t.wiki : t.guide}
+				{isDomain ? t.domain : t.guide}
 			</p>
 			<SidebarTree nodes={data.nav} current={data.page.route} />
 		</div>

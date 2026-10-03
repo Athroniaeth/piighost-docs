@@ -4,10 +4,10 @@
 import { getSite } from '../src/lib/server/content/site';
 
 const site = await getSite();
-const bySpace = { guide: 0, wiki: 0 };
+const bySpace = { guide: 0, domain: 0 };
 for (const page of site.pages.values()) bySpace[page.space]++;
 console.log(
-	`${site.pages.size} pages (guide ${bySpace.guide}, wiki ${bySpace.wiki}), ${[...site.ids.values()].map((index) => index.size).join(' and ')} identifiers (fr and en)`
+	`${site.pages.size} pages (guide ${bySpace.guide}, domain ${bySpace.domain}), ${[...site.ids.values()].map((index) => index.size).join(' and ')} identifiers (fr and en)`
 );
 if (site.problems.length) {
 	console.error(`${site.problems.length} problem(s):`);

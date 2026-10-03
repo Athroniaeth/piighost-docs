@@ -21,7 +21,7 @@ import { collectDefinitions, anchorOf, type IdIndex } from './ids';
 import { renderDiagram, closeDiagrams } from './diagrams';
 import { traceRules } from './traceability';
 
-export type Space = 'guide' | 'wiki';
+export type Space = 'guide' | 'domain';
 
 export interface Page {
 	space: Space;
@@ -74,6 +74,12 @@ const WIKI_SECTIONS: [string, Record<Language, string>][] = [
 ];
 const WIKI_TOP = ['quickstart.md', 'needs-by-profile.md', 'glossary.md'];
 
+/** The first crumb of each space, as the navigation names it. */
+const HOME_LABELS: Record<Space, Record<Language, string>> = {
+	guide: { fr: 'Technique', en: 'Technical' },
+	domain: { fr: 'Métier', en: 'Domain' }
+};
+
 /** Every Markdown file under a folder, as paths relative to it. */
 function markdownFiles(root: string, skip: (path: string) => boolean): string[] {
 	const out: string[] = [];
@@ -100,9 +106,9 @@ function routePart(rel: string): string {
 
 function titleOf(draft: Draft): string {
 	// A wiki folder index is a generated list headed "Fichiers": name it after its section.
-	if (draft.space === 'wiki' && draft.repoPath.endsWith('index.md')) {
+	if (draft.space === 'domain' && draft.repoPath.endsWith('index.md')) {
 		const folder = draft.repoPath.split('/').slice(-2, -1)[0];
-		return WIKI_SECTIONS.find(([name]) => name === folder)?.[1][draft.lang] ?? 'Wiki';
+		return WIKI_SECTIONS.find(([name]) => name === folder)?.[1][draft.lang] ?? 'Documentation';
 	}
 	const fromMatter = draft.frontmatter.title;
 	if (typeof fromMatter === 'string' && fromMatter) return fromMatter;
@@ -237,10 +243,10 @@ async function load(): Promise<Site> {
 		const wikiRoot = join(CONTENT_ROOT, 'openwiki', lang);
 		for (const rel of markdownFiles(wikiRoot, () => false)) {
 			await read(
-				'wiki',
+				'domain',
 				lang,
 				`openwiki/${lang}/${rel}`,
-				`/${lang}/wiki/${routePart(rel)}`,
+				`/${lang}/domain/${routePart(rel)}`,
 				new Map()
 			);
 		}
@@ -250,7 +256,7 @@ async function load(): Promise<Site> {
 	const wikiPaths = (lang: Language) =>
 		new Set(
 			drafts
-				.filter((draft) => draft.space === 'wiki' && draft.lang === lang)
+				.filter((draft) => draft.space === 'domain' && draft.lang === lang)
 				.map((draft) => draft.repoPath.slice(`openwiki/${lang}/`.length))
 		);
 	const [frPages, enPages] = [wikiPaths('fr'), wikiPaths('en')];
@@ -264,7 +270,7 @@ async function load(): Promise<Site> {
 	// First pass: the identifiers each language's wiki defines, once each.
 	const ids = new Map<Language, IdIndex>(LANGUAGES.map((lang) => [lang, new Map()]));
 	const definedBy = new Map<string, Map<string, string>>();
-	for (const draft of drafts.filter((item) => item.space === 'wiki')) {
+	for (const draft of drafts.filter((item) => item.space === 'domain')) {
 		const index = ids.get(draft.lang)!;
 		const anchors = new Map<string, string>();
 		for (const entry of collectDefinitions(draft.mdast, draft.route, titleOf(draft))) {
@@ -286,7 +292,7 @@ async function load(): Promise<Site> {
 	// The rules the wiki locates, joined to the code graph when it was built.
 	// The code is the same in both languages: the French pages give it.
 	for (const [rule, trace] of traceRules(
-		drafts.filter((item) => item.space === 'wiki' && item.lang === 'fr').map((item) => item.mdast)
+		drafts.filter((item) => item.space === 'domain' && item.lang === 'fr').map((item) => item.mdast)
 	)) {
 		for (const index of ids.values()) {
 			const entry = index.get(rule);
@@ -298,10 +304,10 @@ async function load(): Promise<Site> {
 	for (const lang of LANGUAGES) nav.set(`${lang}/guide`, guideNav(lang, routes));
 	for (const lang of LANGUAGES)
 		nav.set(
-			`${lang}/wiki`,
+			`${lang}/domain`,
 			wikiNav(
 				lang,
-				drafts.filter((draft) => draft.space === 'wiki')
+				drafts.filter((draft) => draft.space === 'domain')
 			)
 		);
 
@@ -349,7 +355,7 @@ async function load(): Promise<Site> {
 			ids: ids.get(draft.lang)!,
 			abbreviations: draft.abbreviations,
 			definitionAnchors: definedBy.get(draft.route) ?? new Map(),
-			slugStyle: draft.space === 'wiki' ? 'github' : 'python-markdown',
+			slugStyle: draft.space === 'domain' ? 'github' : 'python-markdown',
 			problems: pageProblems
 		});
 		for (const problem of new Set(pageProblems)) problems.push(`${draft.repoPath}: ${problem}`);
@@ -377,9 +383,8 @@ async function load(): Promise<Site> {
 			if (!page) return;
 			page.previous = order[index - 1]?.link;
 			page.next = order[index + 1]?.link;
-			const home = key.endsWith('wiki')
-				? { href: `/${key}/`, label: 'Wiki' }
-				: { href: `/${key}/`, label: 'Guide' };
+			const [lang, space] = key.split('/') as [Language, Space];
+			const home = { href: `/${key}/`, label: HOME_LABELS[space][lang] };
 			page.breadcrumbs = [home, ...item.trail.filter((crumb) => crumb.label), item.link];
 		});
 	}

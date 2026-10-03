@@ -30,8 +30,8 @@ export async function GET() {
 		'',
 		section('Technical guide (English)', (route) => route.startsWith('/en/guide/')),
 		section('Guide technique (français)', (route) => route.startsWith('/fr/guide/')),
-		section('Business wiki (English)', (route) => route.startsWith('/en/wiki/')),
-		section('Wiki métier (français)', (route) => route.startsWith('/fr/wiki/')),
+		section('Domain documentation (English)', (route) => route.startsWith('/en/domain/')),
+		section('Documentation métier (français)', (route) => route.startsWith('/fr/domain/')),
 		[
 			'## Identifier cards',
 			'',

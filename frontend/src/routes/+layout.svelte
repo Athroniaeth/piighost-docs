@@ -18,7 +18,7 @@
 
 	const links = $derived([
 		{ href: `/${lang}/guide/`, label: t.guide, current: space === 'guide' },
-		{ href: `/${lang}/wiki/quickstart/`, label: t.wiki, current: space === 'wiki' },
+		{ href: `/${lang}/domain/quickstart/`, label: t.domain, current: space === 'domain' },
 		{ href: 'https://hub.piighost.dev', label: t.hub, external: true },
 		{ href: 'https://piighost.dev', label: t.site, external: true }
 	]);
@@ -74,7 +74,7 @@
 			title: 'Documentation',
 			links: [
 				{ href: `/${lang}/guide/`, label: t.guide },
-				{ href: `/${lang}/wiki/quickstart/`, label: t.wiki }
+				{ href: `/${lang}/domain/quickstart/`, label: t.domain }
 			]
 		},
 		{
