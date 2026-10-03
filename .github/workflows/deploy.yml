@@ -14,6 +14,9 @@ concurrency:
 jobs:
   check:
     name: Check the content, then deploy
+    # Off until piighost's master carries the 2.0 documentation and its wiki:
+    # set the repository variable DEPLOY_ENABLED to true then.
+    if: vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +28,8 @@ jobs:
           path: content/piighost
 
       - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
 
       - uses: actions/setup-node@v4
         with:
@@ -43,7 +48,8 @@ jobs:
 
       # Coolify builds the images itself, from master: the newest content.
       - name: Deploy
-        run: curl -fsS "$COOLIFY_DEPLOY_WEBHOOK" -H "Authorization: Bearer $COOLIFY_TOKEN"
+        run: |
+          curl -fsS "$COOLIFY_DEPLOY_WEBHOOK" -H "Authorization: Bearer $COOLIFY_TOKEN"
         env:
           COOLIFY_DEPLOY_WEBHOOK: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}

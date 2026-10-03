@@ -27,6 +27,8 @@ jobs:
           uvx ruff check mcp
 
       - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
 
       - uses: actions/setup-node@v4
         with:
