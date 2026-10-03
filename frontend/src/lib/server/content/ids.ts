@@ -29,7 +29,7 @@ export type IdIndex = Map<string, IdEntry>;
 
 const NEED = /^((?:DPO|DEV|OPS|USER)-\d+)\.\s+(.+)$/s;
 const RULE = /^(BR-[A-Z]+-\d{2})\.\s+(.+)$/s;
-const DECISION = /^(DEC-\d{2})\.\s+(.+)$/s;
+const DECISION = /^(DEC-\d{2})\s*:\s*(.+)$/;
 const GAP = /^(ECART-\d{2})\s*:\s*(.+)$/;
 const TEST = /^AT-(?:DPO|DEV|OPS|USER)-\d+-\d+$/;
 
@@ -64,14 +64,14 @@ export function collectDefinitions(tree: Root, page: string, title: string): IdE
 		// index to resume at, and would visit the same nodes again.
 		const need = NEED.exec(text);
 		const rule = need ? null : RULE.exec(text);
-		const decision = need || rule ? null : DECISION.exec(text);
 		if (need) add(need[1], need[2]);
 		else if (rule) add(rule[1], rule[2]);
-		else if (decision) add(decision[1], decision[2]);
 	});
+	// A decision and a gap are headings, so each shows in the page's outline.
 	visit(tree, 'heading', (node: Heading) => {
-		const gap = GAP.exec(toString(node).trim());
-		if (gap) add(gap[1], gap[2]);
+		const text = toString(node).trim();
+		const heading = DECISION.exec(text) ?? GAP.exec(text);
+		if (heading) add(heading[1], heading[2]);
 	});
 	visit(tree, 'tableRow', (node: TableRow) => {
 		const cells = node.children.map((cell) => toString(cell).trim());
