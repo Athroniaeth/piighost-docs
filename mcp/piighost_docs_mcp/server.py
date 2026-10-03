@@ -53,7 +53,7 @@ def _terms(text: str) -> list[str]:
 
 @dataclass
 class Section:
-    page: Page
+    page: "Page"
     heading: str
     text: str
     terms: Counter[str] = field(default_factory=Counter)
@@ -127,7 +127,7 @@ class Index:
         self.frequency: Counter[str] = Counter()
         self.average = 1.0
 
-    def fresh(self) -> Index:
+    def fresh(self) -> "Index":
         """Rebuild when the site was rebuilt since the last call."""
         marker = SITE_DIR / "llms.txt"
         stamp = marker.stat().st_mtime if marker.exists() else 0.0

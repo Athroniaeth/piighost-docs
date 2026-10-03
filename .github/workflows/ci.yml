@@ -25,6 +25,7 @@ jobs:
         run: |
           uvx ruff format --check mcp
           uvx ruff check mcp
+          uv run --directory mcp --frozen python -c "import piighost_docs_mcp.server"
 
       - uses: pnpm/action-setup@v4
         with:

@@ -11,3 +11,8 @@ piighost-docs-mcp = "piighost_docs_mcp.server:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.ruff]
+# The server runs on 3.13, where an annotation is evaluated when its class is
+# built: a forward reference keeps its quotes.
+target-version = "py313"
