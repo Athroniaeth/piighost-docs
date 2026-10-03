@@ -1,4 +1,4 @@
-import { SITE_URL } from '#lib/server/content/idcard.js';
+import { idCards, SITE_URL } from '#lib/server/content/idcard.js';
 import { getSite } from '#lib/server/content/site.js';
 
 export const prerender = true;
@@ -30,13 +30,14 @@ export async function GET() {
 		'',
 		section('Technical guide (English)', (route) => route.startsWith('/en/guide/')),
 		section('Guide technique (français)', (route) => route.startsWith('/fr/guide/')),
+		section('Business wiki (English)', (route) => route.startsWith('/en/wiki/')),
 		section('Wiki métier (français)', (route) => route.startsWith('/fr/wiki/')),
 		[
-			"## Fiches d'identifiants (français)",
+			'## Identifier cards',
 			'',
-			...[...site.ids.values()].map(
-				(entry) =>
-					`- [${entry.id}](${SITE_URL}/ids/${entry.id}/index.md): ${entry.summary.replace(/\s+/g, ' ').slice(0, 160)}`
+			...idCards(site.ids).map(
+				({ en }) =>
+					`- [${en.id}](${SITE_URL}/ids/${en.id}/index.md): ${en.summary.replace(/\s+/g, ' ').slice(0, 160)}`
 			),
 			''
 		].join('\n')

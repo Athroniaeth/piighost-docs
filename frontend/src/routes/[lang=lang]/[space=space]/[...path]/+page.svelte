@@ -46,9 +46,6 @@
 		<div class="mb-4 flex flex-wrap items-center justify-between gap-3" data-pagefind-ignore>
 			<Breadcrumbs items={data.page.breadcrumbs} label={t.breadcrumb} />
 		</div>
-		{#if isWiki && lang === 'en'}
-			<p class="mb-4 text-sm text-muted-foreground">{t.wikiInFrench}</p>
-		{/if}
 		<article class="prose-piighost">
 			<Content nodes={data.page.nodes} copyLabel={t.copy} copiedLabel={t.copied} />
 		</article>

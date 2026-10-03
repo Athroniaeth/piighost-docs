@@ -3,9 +3,6 @@ import { getSite } from '#lib/server/content/site.js';
 import { REPOSITORY, BRANCH } from '#lib/server/content/config.js';
 import type { EntryGenerator, PageServerLoad } from './$types';
 
-const WIKI_ROOT = '/fr/wiki/';
-const WIKI_HOME = '/fr/wiki/quickstart/';
-
 /** Every page of both spaces, so the prerender writes all of them. */
 export const entries: EntryGenerator = async () => {
 	const site = await getSite();
@@ -22,7 +19,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const route = `/${params.lang}/${params.space}/${path ? `${path}/` : ''}`;
 	// The wiki's root index is the folder list OpenWiki generates, a poorer door
 	// than the page every link of the site already names.
-	if (route === WIKI_ROOT) redirect(308, WIKI_HOME);
+	if (route === `/${params.lang}/wiki/`) redirect(308, `/${params.lang}/wiki/quickstart/`);
 	const page = site.pages.get(route);
 	if (!page) {
 		if (process.env.DEBUG_ROUTES)

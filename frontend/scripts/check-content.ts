@@ -7,7 +7,7 @@ const site = await getSite();
 const bySpace = { guide: 0, wiki: 0 };
 for (const page of site.pages.values()) bySpace[page.space]++;
 console.log(
-	`${site.pages.size} pages (guide ${bySpace.guide}, wiki ${bySpace.wiki}), ${site.ids.size} identifiers`
+	`${site.pages.size} pages (guide ${bySpace.guide}, wiki ${bySpace.wiki}), ${[...site.ids.values()].map((index) => index.size).join(' and ')} identifiers (fr and en)`
 );
 if (site.problems.length) {
 	console.error(`${site.problems.length} problem(s):`);

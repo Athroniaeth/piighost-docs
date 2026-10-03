@@ -1,12 +1,32 @@
 /**
- * The card of an identifier as Markdown, the twin of /ids/<ID>/ for an
- * assistant: what it says, the page that defines it and, for a rule, its code,
- * its tests and its callers. Written in French, as the wiki that defines it.
+ * The card of an identifier, the URL to cite from code, issues and the
+ * chatbot. An identifier is defined in both languages of the wiki, so its card
+ * holds both definitions, English first, and for a rule its code, its tests and
+ * its callers, which do not depend on the language.
  */
-import type { IdEntry } from './ids';
+import type { Language } from './config';
+import type { IdEntry, IdIndex } from './ids';
 import type { CodeRef } from './traceability';
 
 export const SITE_URL = 'https://docs.piighost.dev';
+
+/** An identifier's definition in each language of the wiki. */
+export type IdCard = Record<Language, IdEntry>;
+
+/** Every identifier's card, in the order the English wiki defines them. */
+export function idCards(ids: Map<Language, IdIndex>): IdCard[] {
+	const fr = ids.get('fr') ?? new Map();
+	return [...(ids.get('en') ?? new Map()).values()]
+		.filter((entry) => fr.has(entry.id))
+		.map((entry) => ({ en: entry, fr: fr.get(entry.id)! }));
+}
+
+/** One identifier's card, or undefined when a language does not define it. */
+export function idCard(ids: Map<Language, IdIndex>, id: string): IdCard | undefined {
+	const en = ids.get('en')?.get(id);
+	const fr = ids.get('fr')?.get(id);
+	return en && fr ? { en, fr } : undefined;
+}
 
 const list = (title: string, refs: CodeRef[], empty: string) =>
 	[
@@ -16,25 +36,29 @@ const list = (title: string, refs: CodeRef[], empty: string) =>
 		''
 	].join('\n');
 
-export function idMarkdown(entry: IdEntry): string {
+/** The card as Markdown, the twin of /ids/<ID>/ for an assistant. */
+export function idMarkdown(card: IdCard): string {
+	const { en, fr } = card;
 	const parts = [
-		`# ${entry.id}`,
+		`# ${en.id}`,
 		'',
-		entry.summary,
+		en.summary,
 		'',
-		`Défini dans [${entry.title}](${SITE_URL}${entry.href}).`,
+		`Defined in [${en.title}](${SITE_URL}${en.href}).`,
+		'',
+		`En français : ${fr.summary} Défini dans [${fr.title}](${SITE_URL}${fr.href}).`,
 		''
 	];
-	if (entry.id.startsWith('BR-')) {
-		const trace = entry.trace;
+	if (en.id.startsWith('BR-')) {
+		const trace = en.trace;
 		if (trace) {
 			parts.push(
-				list('Où vit la règle', trace.implementations, 'Aucun emplacement relevé.'),
-				list('Testée par', trace.tests, 'Aucun test ne l’appelle directement.'),
-				list('Utilisée par', trace.callers, 'Aucun appelant relevé.')
+				list('Where the rule lives', trace.implementations, 'No location found.'),
+				list('Tested by', trace.tests, 'No test calls it directly.'),
+				list('Used by', trace.callers, 'No caller found.')
 			);
 		} else {
-			parts.push('La page de cette règle ne donne pas encore son emplacement dans le code.', '');
+			parts.push('The page of this rule does not give its place in the code yet.', '');
 		}
 	}
 	return parts.join('\n');

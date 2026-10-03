@@ -5,12 +5,14 @@
 	import Workflow from '@lucide/svelte/icons/workflow';
 
 	/**
-	 * The card of an identifier, the URL to cite: what it says, where it is
-	 * written, and for a rule where it lives in the code and which tests guard it.
+	 * The card of an identifier, the URL to cite: what it says in each language,
+	 * where it is written, and for a rule where it lives in the code and which
+	 * tests guard it.
 	 */
 	let { data } = $props();
 
-	const entry = $derived(data.entry);
+	const entry = $derived(data.card.en);
+	const french = $derived(data.card.fr);
 	const trace = $derived(entry.trace);
 	const isRule = $derived(entry.id.startsWith('BR-'));
 	const SHOWN = 12;
@@ -50,13 +52,13 @@
 				{/each}
 			</ul>
 			{#if refs.length > SHOWN}
-				<p class="px-2 text-sm text-muted-foreground">et {refs.length - SHOWN} autres</p>
+				<p class="px-2 text-sm text-muted-foreground">and {refs.length - SHOWN} more</p>
 			{/if}
 		{/if}
 	</section>
 {/snippet}
 
-<main id="content" class="mx-auto max-w-3xl space-y-8 px-6 py-14">
+<main id="content" lang="en" class="mx-auto max-w-3xl space-y-8 px-6 py-14">
 	<header class="feuille space-y-3">
 		<p class="font-mono text-sm text-primary">{entry.id}</p>
 		<p class="text-xl leading-relaxed">{entry.summary}</p>
@@ -66,30 +68,34 @@
 		>
 	</header>
 
+	<section lang="fr" class="space-y-2 rounded-lg border bg-card p-6">
+		<p class="text-sm text-muted-foreground">En français</p>
+		<p class="leading-relaxed">{french.summary}</p>
+		<a
+			class="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+			href={french.href}>{french.title}<ArrowRight class="size-4" aria-hidden="true" /></a
+		>
+	</section>
+
 	{#if isRule}
 		{#if trace}
 			<div class="grid min-w-0 gap-8 rounded-lg border bg-card p-6">
 				{@render list(
-					'Où vit la règle',
+					'Where the rule lives',
 					FileCode,
 					trace.implementations,
-					'Aucun emplacement relevé.'
+					'No location found.'
 				)}
-				{@render list(
-					'Testée par',
-					FlaskConical,
-					trace.tests,
-					'Aucun test ne l’appelle directement.'
-				)}
-				{@render list('Utilisée par', Workflow, trace.callers, 'Aucun appelant relevé.')}
+				{@render list('Tested by', FlaskConical, trace.tests, 'No test calls it directly.')}
+				{@render list('Used by', Workflow, trace.callers, 'No caller found.')}
 			</div>
 			<p class="text-sm text-muted-foreground">
-				Relevé dans le graphe du code construit par graphify, à partir des emplacements que donne le
-				wiki. Un test qui passe par une autre fonction n’apparaît pas ici.
+				Read from the code graph graphify builds, at the places the wiki gives. A test that goes
+				through another function does not show here.
 			</p>
 		{:else}
 			<p class="text-sm text-muted-foreground">
-				La page de cette règle ne donne pas encore son emplacement dans le code.
+				The page of this rule does not give its place in the code yet.
 			</p>
 		{/if}
 	{/if}

@@ -9,8 +9,9 @@
 	const t = $derived(labels(lang));
 
 	/** Who expects what from piighost is business content: each card opens its
-	 *  section of the needs page, which links on to the guide pages of that profile. */
-	const NEEDS = '/fr/wiki/besoins-par-profil/#';
+	 *  section of the needs page in the reader's language, which links on to the
+	 *  guide pages of that profile. */
+	const NEEDS = $derived(`/${lang}/wiki/needs-by-profile/#`);
 	const profiles = $derived(
 		lang === 'fr'
 			? [
@@ -43,26 +44,26 @@
 					{
 						title: 'Compliance officer',
 						text: 'No confidential data leaves in clear, and you can prove it.',
-						href: `${NEEDS}responsable-conformité-dpo`,
-						link: 'Your needs (French)'
+						href: `${NEEDS}compliance-officer-dpo`,
+						link: 'Your needs'
 					},
 					{
 						title: 'Developer',
 						text: 'The protection joins your agent without rewriting its logic.',
-						href: `${NEEDS}développeur`,
-						link: 'Your needs (French)'
+						href: `${NEEDS}developer`,
+						link: 'Your needs'
 					},
 					{
 						title: 'Operator',
 						text: 'A shared server, an encrypted memory, secrets kept out of files.',
-						href: `${NEEDS}exploitant`,
-						link: 'Your needs (French)'
+						href: `${NEEDS}operator`,
+						link: 'Your needs'
 					},
 					{
 						title: 'Application user',
 						text: 'They read their real information and never see a token.',
-						href: `${NEEDS}utilisateur-de-lapplication`,
-						link: 'Their needs (French)'
+						href: `${NEEDS}application-user`,
+						link: 'Their needs'
 					}
 				]
 	);
@@ -93,7 +94,7 @@
 			<span class="text-sm text-muted-foreground">{t.guideDescription}</span>
 		</a>
 		<a
-			href="/fr/wiki/quickstart/"
+			href="/{lang}/wiki/quickstart/"
 			class="group flex flex-col gap-2 rounded-lg border bg-card p-6 transition-colors hover:border-primary"
 		>
 			<Users class="size-6 text-primary" aria-hidden="true" />

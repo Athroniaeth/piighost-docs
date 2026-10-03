@@ -17,7 +17,7 @@ export const CONTENT_ROOT = resolve(
 export const REPOSITORY = 'https://github.com/Athroniaeth/piighost';
 export const BRANCH = process.env.PIIGHOST_BRANCH ?? 'master';
 
-/** The languages of the technical guide. The wiki is French for now. */
+/** The languages of the guide and the wiki, always both. */
 export const LANGUAGES = ['fr', 'en'] as const;
 export type Language = (typeof LANGUAGES)[number];
 

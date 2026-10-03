@@ -28,6 +28,9 @@
 		</p>
 		<p class="flex flex-wrap gap-x-6 gap-y-2">
 			<a class="text-primary underline-offset-4 hover:underline" href="/en/guide/">The guide</a>
+			<a class="text-primary underline-offset-4 hover:underline" href="/en/wiki/quickstart/"
+				>The business wiki</a
+			>
 		</p>
 	</section>
 </main>

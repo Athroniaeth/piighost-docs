@@ -214,7 +214,7 @@ def search_docs(
     """Search the piighost documentation, ranked by relevance.
 
     query: words or an identifier (BR-MSG-05, DPO-9, load_thread_pipeline).
-    lang: "fr" or "en", both when omitted. The wiki is written in French.
+    lang: "fr" or "en", both when omitted. The guide and the wiki exist in both.
     space: "guide" for the technical guide, "wiki" for the business wiki, both when omitted.
     Returns, per matching section, the page title, the section heading, the page path
     (for read_page), its URL and an excerpt.
@@ -237,7 +237,7 @@ def search_docs(
 def read_page(path: str) -> str:
     """Read one page of the documentation in full, as Markdown.
 
-    path: a path search_docs or list_pages gave ("fr/wiki/processus/proteger-un-message"),
+    path: a path search_docs or list_pages gave ("en/wiki/processes/protect-a-message"),
     or the page's URL.
     """
     key = path.removeprefix(BASE_URL).strip("/").removesuffix("/index.md")

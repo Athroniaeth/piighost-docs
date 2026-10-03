@@ -45,7 +45,8 @@ export interface Page {
 export interface Site {
 	pages: Map<string, Page>;
 	nav: Map<string, TreeNode[]>;
-	ids: IdIndex;
+	/** The identifiers each language's wiki defines, the same set in both. */
+	ids: Map<Language, IdIndex>;
 	problems: string[];
 }
 
@@ -62,15 +63,16 @@ interface Draft {
 	abbreviations: Map<string, string>;
 }
 
-const WIKI_SECTIONS: [string, string][] = [
-	['processus', 'Processus'],
-	['integrations', 'Intégrations'],
-	['exploitation', 'Exploitation'],
-	['architecture', 'Architecture'],
-	['tests', 'Tests'],
-	['reference', 'Référence']
+/** The wiki's folders, the same English paths in both languages, with each language's label. */
+const WIKI_SECTIONS: [string, Record<Language, string>][] = [
+	['processes', { fr: 'Processus', en: 'Processes' }],
+	['integrations', { fr: 'Intégrations', en: 'Integrations' }],
+	['operations', { fr: 'Exploitation', en: 'Operations' }],
+	['architecture', { fr: 'Architecture', en: 'Architecture' }],
+	['tests', { fr: 'Tests', en: 'Tests' }],
+	['reference', { fr: 'Référence', en: 'Reference' }]
 ];
-const WIKI_TOP = ['quickstart.md', 'besoins-par-profil.md', 'glossaire.md'];
+const WIKI_TOP = ['quickstart.md', 'needs-by-profile.md', 'glossary.md'];
 
 /** Every Markdown file under a folder, as paths relative to it. */
 function markdownFiles(root: string, skip: (path: string) => boolean): string[] {
@@ -100,7 +102,7 @@ function titleOf(draft: Draft): string {
 	// A wiki folder index is a generated list headed "Fichiers": name it after its section.
 	if (draft.space === 'wiki' && draft.repoPath.endsWith('index.md')) {
 		const folder = draft.repoPath.split('/').slice(-2, -1)[0];
-		return WIKI_SECTIONS.find(([name]) => name === folder)?.[1] ?? 'Wiki';
+		return WIKI_SECTIONS.find(([name]) => name === folder)?.[1][draft.lang] ?? 'Wiki';
 	}
 	const fromMatter = draft.frontmatter.title;
 	if (typeof fromMatter === 'string' && fromMatter) return fromMatter;
@@ -145,22 +147,23 @@ function guideNav(lang: Language, routes: Map<string, string>): TreeNode[] {
 	return entries.map(convert).filter((node): node is TreeNode => !!node);
 }
 
-/** The wiki's tree: its three entry pages, then one section per folder. */
-function wikiNav(drafts: Draft[]): TreeNode[] {
+/** One language's wiki tree: its three entry pages, then one section per folder. */
+function wikiNav(lang: Language, drafts: Draft[]): TreeNode[] {
 	const byRepo = new Map(drafts.map((draft) => [draft.repoPath, draft]));
 	const node = (repoPath: string): TreeNode | undefined => {
 		const draft = byRepo.get(repoPath);
 		return draft ? { label: titleOf(draft), href: draft.route } : undefined;
 	};
-	const top = WIKI_TOP.map((name) => node(`openwiki/${name}`)).filter(
+	const top = WIKI_TOP.map((name) => node(`openwiki/${lang}/${name}`)).filter(
 		(item): item is TreeNode => !!item
 	);
-	const sections = WIKI_SECTIONS.map(([folder, label]) => ({
-		label,
+	const sections = WIKI_SECTIONS.map(([folder, labels]) => ({
+		label: labels[lang],
 		children: drafts
 			.filter(
 				(draft) =>
-					draft.repoPath.startsWith(`openwiki/${folder}/`) && !draft.repoPath.endsWith('/index.md')
+					draft.repoPath.startsWith(`openwiki/${lang}/${folder}/`) &&
+					!draft.repoPath.endsWith('/index.md')
 			)
 			.map((draft) => ({ label: titleOf(draft), href: draft.route }))
 	})).filter((section) => section.children.length > 0);
@@ -195,7 +198,7 @@ async function load(): Promise<Site> {
 		const bases =
 			space === 'guide'
 				? [join(CONTENT_ROOT, 'docs', lang), join(CONTENT_ROOT, 'docs')]
-				: [join(CONTENT_ROOT, 'openwiki')];
+				: [join(CONTENT_ROOT, 'openwiki', lang)];
 		const read = (path: string) => {
 			const found = bases
 				.map((base) => join(base, path))
@@ -230,40 +233,77 @@ async function load(): Promise<Site> {
 			await read('guide', lang, `docs/${lang}/${rel}`, `/${lang}/guide/${routePart(rel)}`, shared);
 		}
 	}
-	const wikiRoot = join(CONTENT_ROOT, 'openwiki');
-	for (const rel of markdownFiles(wikiRoot, (path) => path === 'INSTRUCTIONS.md')) {
-		await read('wiki', 'fr', `openwiki/${rel}`, `/fr/wiki/${routePart(rel)}`, new Map());
+	for (const lang of LANGUAGES) {
+		const wikiRoot = join(CONTENT_ROOT, 'openwiki', lang);
+		for (const rel of markdownFiles(wikiRoot, () => false)) {
+			await read(
+				'wiki',
+				lang,
+				`openwiki/${lang}/${rel}`,
+				`/${lang}/wiki/${routePart(rel)}`,
+				new Map()
+			);
+		}
 	}
+
+	// The two wikis are one wiki in two languages: a page in one only is a gap.
+	const wikiPaths = (lang: Language) =>
+		new Set(
+			drafts
+				.filter((draft) => draft.space === 'wiki' && draft.lang === lang)
+				.map((draft) => draft.repoPath.slice(`openwiki/${lang}/`.length))
+		);
+	const [frPages, enPages] = [wikiPaths('fr'), wikiPaths('en')];
+	for (const path of frPages)
+		if (!enPages.has(path)) problems.push(`openwiki/en/${path} is missing`);
+	for (const path of enPages)
+		if (!frPages.has(path)) problems.push(`openwiki/fr/${path} is missing`);
 
 	const routes = new Map(drafts.map((draft) => [draft.repoPath, draft.route]));
 
-	// First pass: the identifiers the wiki defines.
-	const ids: IdIndex = new Map();
+	// First pass: the identifiers each language's wiki defines, once each.
+	const ids = new Map<Language, IdIndex>(LANGUAGES.map((lang) => [lang, new Map()]));
 	const definedBy = new Map<string, Map<string, string>>();
 	for (const draft of drafts.filter((item) => item.space === 'wiki')) {
+		const index = ids.get(draft.lang)!;
 		const anchors = new Map<string, string>();
 		for (const entry of collectDefinitions(draft.mdast, draft.route, titleOf(draft))) {
-			if (ids.has(entry.id)) {
-				problems.push(`${entry.id} defined twice: ${ids.get(entry.id)?.page} and ${draft.route}`);
+			if (index.has(entry.id)) {
+				problems.push(`${entry.id} defined twice: ${index.get(entry.id)?.page} and ${draft.route}`);
 				continue;
 			}
-			ids.set(entry.id, entry);
+			index.set(entry.id, entry);
 			anchors.set(entry.id, anchorOf(entry.id));
 		}
 		definedBy.set(draft.route, anchors);
 	}
+	const [frIds, enIds] = [ids.get('fr')!, ids.get('en')!];
+	for (const id of frIds.keys())
+		if (!enIds.has(id)) problems.push(`${id} is not defined in English`);
+	for (const id of enIds.keys())
+		if (!frIds.has(id)) problems.push(`${id} is not defined in French`);
 
 	// The rules the wiki locates, joined to the code graph when it was built.
+	// The code is the same in both languages: the French pages give it.
 	for (const [rule, trace] of traceRules(
-		drafts.filter((item) => item.space === 'wiki').map((item) => item.mdast)
+		drafts.filter((item) => item.space === 'wiki' && item.lang === 'fr').map((item) => item.mdast)
 	)) {
-		const entry = ids.get(rule);
-		if (entry) entry.trace = trace;
+		for (const index of ids.values()) {
+			const entry = index.get(rule);
+			if (entry) entry.trace = trace;
+		}
 	}
 
 	const nav = new Map<string, TreeNode[]>();
 	for (const lang of LANGUAGES) nav.set(`${lang}/guide`, guideNav(lang, routes));
-	nav.set('fr/wiki', wikiNav(drafts.filter((draft) => draft.space === 'wiki')));
+	for (const lang of LANGUAGES)
+		nav.set(
+			`${lang}/wiki`,
+			wikiNav(
+				lang,
+				drafts.filter((draft) => draft.space === 'wiki')
+			)
+		);
 
 	// Second pass: every page's tree.
 	const pages = new Map<string, Page>();
@@ -306,7 +346,7 @@ async function load(): Promise<Site> {
 			resolveLink,
 			resolveAsset,
 			renderDiagram,
-			ids,
+			ids: ids.get(draft.lang)!,
 			abbreviations: draft.abbreviations,
 			definitionAnchors: definedBy.get(draft.route) ?? new Map(),
 			slugStyle: draft.space === 'wiki' ? 'github' : 'python-markdown',
