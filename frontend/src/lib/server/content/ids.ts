@@ -3,7 +3,7 @@
  *
  * Identifiers are in English and the same in every language (openwiki
  * INSTRUCTIONS.md, "Identifiants"): needs DPO-n, DEV-n, OPS-n, USER-n; rules
- * BR-<DOMAIN>-NN; acceptance tests AT-<need>-<n>; gaps ECART-NN. Each is defined
+ * BR-<DOMAIN>-NN; design decisions DEC-NN; acceptance tests AT-<need>-<n>; gaps ECART-NN. Each is defined
  * once, by the way its page writes it, and linked everywhere else.
  */
 import { toString } from 'mdast-util-to-string';
@@ -12,7 +12,7 @@ import type { Root, Paragraph, TableRow, Heading } from 'mdast';
 import type { Trace } from './traceability';
 
 export const ID_PATTERN =
-	/\b(?:(?:DPO|DEV|OPS|USER)-\d+|BR-[A-Z]+-\d{2}|AT-(?:DPO|DEV|OPS|USER)-\d+-\d+|ECART-\d{2})\b/g;
+	/\b(?:(?:DPO|DEV|OPS|USER)-\d+|BR-[A-Z]+-\d{2}|DEC-\d{2}|AT-(?:DPO|DEV|OPS|USER)-\d+-\d+|ECART-\d{2})\b/g;
 
 export interface IdEntry {
 	id: string;
@@ -29,6 +29,7 @@ export type IdIndex = Map<string, IdEntry>;
 
 const NEED = /^((?:DPO|DEV|OPS|USER)-\d+)\.\s+(.+)$/s;
 const RULE = /^(BR-[A-Z]+-\d{2})\.\s+(.+)$/s;
+const DECISION = /^(DEC-\d{2})\.\s+(.+)$/s;
 const GAP = /^(ECART-\d{2})\s*:\s*(.+)$/;
 const TEST = /^AT-(?:DPO|DEV|OPS|USER)-\d+-\d+$/;
 
@@ -63,8 +64,10 @@ export function collectDefinitions(tree: Root, page: string, title: string): IdE
 		// index to resume at, and would visit the same nodes again.
 		const need = NEED.exec(text);
 		const rule = need ? null : RULE.exec(text);
+		const decision = need || rule ? null : DECISION.exec(text);
 		if (need) add(need[1], need[2]);
 		else if (rule) add(rule[1], rule[2]);
+		else if (decision) add(decision[1], decision[2]);
 	});
 	visit(tree, 'heading', (node: Heading) => {
 		const gap = GAP.exec(toString(node).trim());

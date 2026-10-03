@@ -294,7 +294,8 @@ def _unflatten(data: list[Any]) -> Any:
 @mcp.tool()
 def get_id(identifier: str) -> dict[str, Any]:
     """Look up an identifier of the domain documentation: a rule (BR-MSG-05), a need (DPO-9, DEV-10,
-    OPS-8, USER-6), an acceptance test (AT-DEV-10-1) or a gap (ECART-09).
+    OPS-8, USER-6), a design decision (DEC-13), an acceptance test (AT-DEV-10-1) or a gap
+    (ECART-09).
 
     Returns what it says, the page that defines it and, for a rule, where it lives
     in the code, which tests call it and which code uses it.
