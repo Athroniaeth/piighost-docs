@@ -59,9 +59,13 @@
 	cursor: help;
 }
 
-/* A definition the URL points at: the reader sees which block it is. */
+/* A definition the URL points at: the reader sees which block it is. A heading
+   needs no frame, it already says where the reader landed. */
 .prose-piighost :target {
 	scroll-margin-block-start: 5rem;
+}
+
+.prose-piighost :target:not(:is(h1, h2, h3, h4)) {
 	outline: 2px solid var(--ring);
 	outline-offset: 0.25rem;
 	border-radius: var(--radius);
