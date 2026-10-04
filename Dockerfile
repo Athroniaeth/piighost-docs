@@ -43,7 +43,7 @@ RUN graphify extract . --code-only --no-viz >/dev/null \
 FROM node:22-bookworm-slim AS site
 # Chromium renders the Mermaid diagrams at build time, through mermaid-cli.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends chromium fonts-dejavu-core \
+    && apt-get install -y --no-install-recommends chromium fonts-dejavu-core fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 ENV CHROMIUM_PATH=/usr/bin/chromium PIIGHOST_CONTENT=/content
 WORKDIR /app/frontend

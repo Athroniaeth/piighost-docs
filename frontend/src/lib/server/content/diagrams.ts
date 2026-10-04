@@ -20,7 +20,17 @@ import { renderMermaid } from '@mermaid-js/mermaid-cli';
 import puppeteer, { type Browser } from 'puppeteer-core';
 import { CHROMIUM_PATH, DIAGRAMS_DIR, DIAGRAMS_URL } from './config';
 
-const FONT = '"Schibsted Grotesk Variable", "Schibsted Grotesk", system-ui, sans-serif';
+/**
+ * A diagram is measured at build time and drawn later in the reader's browser,
+ * through <img>, which cannot load the site's web fonts. Labels were measured
+ * in one font and drawn in another, and the wider one was cut ("detecto").
+ * Arial, Liberation Sans and Helvetica share the same metrics, and every system
+ * has one of them, so what is measured is what is drawn.
+ */
+const FONT = 'Arial, "Liberation Sans", Helvetica, sans-serif';
+
+/** Part of each cache key: a change of font or theme renders every diagram again. */
+const RENDER_VERSION = 'metric-font-1';
 
 const THEMES = {
 	light: {
@@ -96,7 +106,7 @@ async function render(code: string, mode: keyof typeof THEMES): Promise<string> 
 
 /** The URLs of a diagram's two renders, rendering them when they are not cached. */
 export async function renderDiagram(code: string): Promise<{ light: string; dark: string }> {
-	const hash = createHash('sha256').update(code).digest('hex').slice(0, 16);
+	const hash = createHash('sha256').update(RENDER_VERSION).update(code).digest('hex').slice(0, 16);
 	mkdirSync(DIAGRAMS_DIR, { recursive: true });
 	const urls = {
 		light: `${DIAGRAMS_URL}/${hash}-light.svg`,

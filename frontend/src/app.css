@@ -168,3 +168,11 @@ details.group\/section:not([open]) > summary > svg {
 .toc-folded nav > p:first-child {
 	display: none;
 }
+
+/* On a phone a wide diagram fits the column whole rather than being cut
+   mid-node: the reader zooms in, as on any picture. */
+@media (width < 40rem) {
+	.prose-piighost figure > :is(img.diagram-light, img.diagram-dark) {
+		max-width: 100%;
+	}
+}
