@@ -89,10 +89,12 @@
 			</ul>
 			<p>{t.homeNewPractice}</p>
 			<p>
+				{t.homeWhyBefore}
 				<a
 					class="font-medium text-primary underline-offset-4 hover:underline"
 					href="/{lang}/guide/why-anonymize/">{t.homeWhy}</a
-				>, {t.homeWhyText}
+				>
+				{t.homeWhyText}
 			</p>
 		</div>
 		<div class="max-w-md"><InstallTabs copyLabel={t.copy} copiedLabel={t.copied} /></div>

@@ -35,15 +35,16 @@ export const LABELS = {
 		homeLead:
 			'piighost protège les données confidentielles dans les conversations avec un LLM. Il remplace chaque valeur sensible par un jeton avant l’envoi au modèle, puis la restaure dans la réponse.',
 		homeTwoDocs:
-			'Ce projet se veut open source et communautaire. Il propose donc deux documentations :',
+			'Ce projet se veut open source et communautaire. Il propose donc deux documentations :',
 		homeGuideItem: 'pour les développeurs qui installent, intègrent et configurent piighost.',
 		homeDomainItem:
 			'pour définir ensemble les règles de la dé-identification, c’est-à-dire ce que fait chaque traitement et les tests qui le vérifient.',
 		homeNewPractice:
 			'Dé-identifier une conversation avec un LLM est une pratique encore nouvelle, et ses règles ne sont écrites nulle part. La documentation métier est l’endroit où les proposer et les discuter.',
-		homeWhy: 'Pourquoi dé-identifier ?',
+		homeWhy: 'Pourquoi dé-identifier ?',
+		homeWhyBefore: 'Lisez',
 		homeWhyText:
-			'ce que risquent vos données quand elles partent vers un LLM, et ce que le droit ne suffit pas à garantir.',
+			'pour savoir ce que risquent vos données quand elles partent vers un LLM, et ce que le droit ne suffit pas à garantir.',
 		guideArticle: 'une documentation technique',
 		domainArticle: 'une documentation métier'
 	},
@@ -89,8 +90,9 @@ export const LABELS = {
 		homeNewPractice:
 			'De-identifying a conversation with an LLM is still a new practice, and its rules are written down nowhere. The domain documentation is where to propose and discuss them.',
 		homeWhy: 'Why de-identify?',
+		homeWhyBefore: 'Read',
 		homeWhyText:
-			'what your data risks when it goes to an LLM, and what the law alone cannot guarantee.',
+			'to learn what your data risks when it goes to an LLM, and what the law alone cannot guarantee.',
 		guideArticle: 'technical documentation',
 		domainArticle: 'domain documentation'
 	}

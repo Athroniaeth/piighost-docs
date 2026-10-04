@@ -14,14 +14,14 @@
    first one, which names the row, below a short phrase: on a narrow column the
    table scrolls rather than stack one word per line. */
 .prose-piighost :is(th, td) {
-	min-width: 7rem;
+	min-width: min(7rem, 25vw);
 	padding: 0.75rem 1rem;
 	line-height: 1.6;
 	text-wrap: pretty;
 }
 
 .prose-piighost :is(th, td):first-child {
-	min-width: 10rem;
+	min-width: min(10rem, 30vw);
 }
 
 /* A table that scrolls clips whatever leaves it, so the card of an identifier
@@ -138,4 +138,33 @@
 .prose-piighost a.trace-link:hover {
 	border-color: var(--primary);
 	color: var(--primary);
+}
+
+/* The charter forbids justified text at any width: the shared styles justify
+   prose from 40rem, which opens holes between words and inside inline code. */
+.prose-piighost :is(p, li, blockquote, dd) {
+	text-align: start;
+	hyphens: manual;
+}
+
+/* A short inline code stays on one line (tree.ts marks it). */
+.prose-piighost code.nowrap {
+	white-space: nowrap;
+}
+
+/* List numbers in the body font, without a gap before their period. */
+.prose-piighost ol > li::marker {
+	font-family: var(--font-sans);
+	font-variant-numeric: tabular-nums;
+}
+
+/* A nested sidebar section is open only when its own details is: the chevron
+   rule matches any open ancestor group, so a closed child looked open. */
+details.group\/section:not([open]) > summary > svg {
+	rotate: none !important;
+}
+
+/* The folded outline already says "On this page" in its summary. */
+.toc-folded nav > p:first-child {
+	display: none;
 }

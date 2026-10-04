@@ -118,7 +118,7 @@ class Builder {
 		// breaks, so a line never starts with ":" and the gap stays narrow.
 		const value =
 			this.context.lang === 'fr' && this.codeDepth === 0
-				? raw.replace(/ ([:;!?])(?=\s|$)/g, '\u202f$1')
+				? raw.replace(/ ([:;!?»])/g, '\u202f$1').replace(/« /g, '«\u202f')
 				: raw;
 		if (!linkify) return [{ type: 'text', value }];
 		const out: ContentNode[] = [];
@@ -232,12 +232,20 @@ class Builder {
 				?.slice('language-'.length);
 			if (language === 'mermaid') {
 				const { light, dark } = await this.context.renderDiagram(text);
-				return [{ type: 'diagram', light, dark, alt: 'Diagram' }];
+				const alt = this.context.lang === 'fr' ? 'Schéma' : 'Diagram';
+				return [{ type: 'diagram', light, dark, alt }];
 			}
 			return [{ type: 'code', code: text, tokens: await highlight(text, language) }];
 		}
 
 		const attrs = attributes(node);
+		// GFM turns every e-mail address into a mailto link, the examples too
+		// (jean.dupont@exemple.fr): an address that is its own link text is text.
+		if (tag === 'a' && typeof attrs.href === 'string' && attrs.href === `mailto:${toString(node)}`)
+			return this.children(node.children, linkify);
+		// A short inline code never breaks in the middle (piighost-api, DEV-n).
+		if (tag === 'code' && toString(node).length <= 32)
+			attrs.class = [attrs.class, 'nowrap'].filter(Boolean).join(' ');
 		if (tag === 'a' && typeof attrs.href === 'string') {
 			attrs.href = this.context.resolveLink(attrs.href);
 			if (/^https?:/.test(attrs.href)) {
