@@ -43,7 +43,7 @@
 	class="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-xl flex-col items-center justify-center gap-6 px-6 py-16 text-center"
 >
 	<Ghost class="size-[6rem]" />
-	<p class="font-mono text-sm text-muted-foreground">{t.eyebrow}</p>
+	<p class="font-mono text-4xl font-medium tracking-tight sm:text-6xl">{t.eyebrow}</p>
 	<h1 class="text-3xl font-bold tracking-tight sm:text-4xl">{t.heading}</h1>
 	<p class="text-muted-foreground">{t.lead}</p>
 	<div class="flex flex-wrap justify-center gap-3">
