@@ -139,17 +139,3 @@
 	border-color: var(--primary);
 	color: var(--primary);
 }
-
-/* A need is the statement its criteria follow: underlined in the text colour,
-   identifier included. Its chip is made inline, since an inline-block breaks
-   the underline the paragraph draws. */
-.prose-piighost p.need-definition {
-	text-decoration-line: underline;
-	text-decoration-color: var(--foreground);
-	text-decoration-thickness: 0.08em;
-	text-underline-offset: 0.3em;
-}
-
-.prose-piighost p.need-definition .group\/id {
-	display: inline;
-}

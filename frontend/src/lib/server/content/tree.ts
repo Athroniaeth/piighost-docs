@@ -261,12 +261,7 @@ class Builder {
 			if (tag === 'h2' || tag === 'h3') this.toc.push({ id, text, depth: tag === 'h2' ? 2 : 3 });
 		} else if (BLOCKS.has(tag)) {
 			const definition = this.definitionFor(toString(node));
-			if (definition && attrs.id === undefined) {
-				attrs.id = definition;
-				// A need reads as a statement, underlined, apart from its criteria.
-				if (/^(dpo|dev|ops|user)-\d+$/.test(definition))
-					attrs.class = [attrs.class, 'need-definition'].filter(Boolean).join(' ');
-			}
+			if (definition && attrs.id === undefined) attrs.id = definition;
 		}
 		if (tag === 'table') attrs.class = [attrs.class, 'table-scroll'].filter(Boolean).join(' ');
 
