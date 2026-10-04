@@ -27,7 +27,7 @@ export default defineConfig({
 				directives: { 'script-src': ['self', 'wasm-unsafe-eval', ...(chat ? [chat] : [])] }
 			},
 			// Root-relative asset paths: the 404 page is served at any depth, where a
-			// path relative to /404/ would point nowhere.
+			// path relative to /fr/404/ would point nowhere.
 			paths: { relative: false },
 			prerender: { handleHttpError: 'fail', handleMissingId: 'fail' }
 		})
