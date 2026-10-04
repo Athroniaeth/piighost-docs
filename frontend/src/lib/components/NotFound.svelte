@@ -13,7 +13,7 @@
 			title: 'Page introuvable',
 			eyebrow: 'Erreur 404',
 			heading: 'Cette page n’existe pas.',
-			lead: 'Elle a peut-être changé d’adresse. La recherche, en haut de la page, retrouve une page par son titre ou par un identifiant comme BR-MSG-05.',
+			lead: 'Elle a peut-être changé d’adresse. La recherche, en haut de la page, retrouve une page par son titre ou par un identifiant.',
 			home: 'Retour à l’accueil',
 			guide: 'Documentation technique',
 			domain: 'Documentation métier'
@@ -22,7 +22,7 @@
 			title: 'Page not found',
 			eyebrow: 'Error 404',
 			heading: 'This page does not exist.',
-			lead: 'It may have moved. The search at the top of the page finds a page by its title or by an identifier such as BR-MSG-05.',
+			lead: 'It may have moved. The search at the top of the page finds a page by its title or by an identifier.',
 			home: 'Back to the home page',
 			guide: 'Technical documentation',
 			domain: 'Domain documentation'
