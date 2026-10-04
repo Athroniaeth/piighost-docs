@@ -10,6 +10,14 @@
 	overflow-x: auto;
 }
 
+/* A table that scrolls clips whatever leaves it, so the card of an identifier
+   in a table is fixed to the window instead. The layout places it under its
+   link, through the CSS object model, which the style policy allows. */
+.prose-piighost .wide-table > table [role='tooltip'],
+.prose-piighost table.table-scroll [role='tooltip'] {
+	position: fixed;
+}
+
 .prose-piighost .figure-caption {
 	margin-block-start: 0.5rem;
 	text-align: center;

@@ -27,7 +27,7 @@ export interface IdEntry {
 
 export type IdIndex = Map<string, IdEntry>;
 
-const NEED = /^((?:DPO|DEV|OPS|USER)-\d+)\.\s+(.+)$/s;
+export const NEED = /^((?:DPO|DEV|OPS|USER)-\d+)\.\s+(.+)$/s;
 const RULE = /^(BR-[A-Z]+-\d{2})\.\s+(.+)$/s;
 const DECISION = /^(DEC-\d{2})\s*:\s*(.+)$/;
 const GAP = /^(ECART-\d{2})\s*:\s*(.+)$/;

@@ -17,7 +17,7 @@ import { CONTENT_ROOT, LANGUAGES, REPOSITORY, BRANCH, type Language } from './co
 import { expandIncludes, preprocess, readAbbreviations } from './preprocess';
 import { parseMarkdown } from './markdown';
 import { buildTree } from './tree';
-import { collectDefinitions, anchorOf, type IdIndex } from './ids';
+import { collectDefinitions, anchorOf, NEED, type IdIndex } from './ids';
 import { renderDiagram, closeDiagrams } from './diagrams';
 import { traceRules } from './traceability';
 
@@ -176,11 +176,45 @@ function wikiNav(lang: Language, drafts: Draft[]): TreeNode[] {
 	return [...top, ...sections];
 }
 
-/** Pages in tree order, for previous and next. */
+/** The headings of the sections that define needs, one per profile. */
+function profileHeadings(tree: MdastRoot): Set<string> {
+	const found = new Set<string>();
+	let section = '';
+	for (const node of tree.children) {
+		if (node.type === 'heading' && node.depth === 2) section = toString(node).trim();
+		else if (node.type === 'paragraph' && section && NEED.test(toString(node).trim()))
+			found.add(section);
+	}
+	return found;
+}
+
+/**
+ * The needs page becomes a section of the tree: its first heading opens the
+ * page, then one entry per profile leads to that profile's section.
+ */
+function listProfiles(tree: TreeNode[], page: Page, draft: Draft): TreeNode[] {
+	const profiles = profileHeadings(draft.mdast);
+	const sections = page.toc.filter((entry) => entry.depth === 2 && profiles.has(entry.text));
+	if (sections.length === 0) return tree;
+	return tree.map((node) =>
+		node.href === page.route
+			? {
+					label: page.title,
+					children: [
+						{ label: page.toc[0]?.text ?? page.title, href: page.route },
+						...sections.map((entry) => ({ label: entry.text, href: `${page.route}#${entry.id}` }))
+					]
+				}
+			: node
+	);
+}
+
+/** Pages in tree order, for previous and next. A link to a section is not a page. */
 function flatten(nodes: TreeNode[], trail: NavLink[] = []): { link: NavLink; trail: NavLink[] }[] {
 	const out: { link: NavLink; trail: NavLink[] }[] = [];
 	for (const node of nodes) {
-		if (node.href) out.push({ link: { href: node.href, label: node.label }, trail });
+		if (node.href && !node.href.includes('#'))
+			out.push({ link: { href: node.href, label: node.label }, trail });
 		if (node.children)
 			out.push(...flatten(node.children, [...trail, { href: node.href ?? '', label: node.label }]));
 	}
@@ -376,16 +410,32 @@ async function load(): Promise<Site> {
 	}
 	await closeDiagrams();
 
+	for (const lang of LANGUAGES) {
+		const key = `${lang}/domain`;
+		const draft = drafts.find((item) => item.repoPath === `openwiki/${lang}/needs-by-profile.md`);
+		const page = draft && pages.get(draft.route);
+		if (draft && page) nav.set(key, listProfiles(nav.get(key)!, page, draft));
+	}
+
+	// A domain page is named by its title, even where the tree shows it under
+	// another label: the needs page opens on its first heading. The guide keeps
+	// the labels of its Zensical nav.
+	const named = (link: NavLink | undefined, space: Space): NavLink | undefined =>
+		link && space === 'domain'
+			? { href: link.href, label: pages.get(link.href)?.title ?? link.label }
+			: link;
 	for (const [key, tree] of nav) {
 		const order = flatten(tree);
+		const [lang, space] = key.split('/') as [Language, Space];
 		order.forEach((item, index) => {
 			const page = pages.get(item.link.href);
 			if (!page) return;
-			page.previous = order[index - 1]?.link;
-			page.next = order[index + 1]?.link;
-			const [lang, space] = key.split('/') as [Language, Space];
+			page.previous = named(order[index - 1]?.link, space);
+			page.next = named(order[index + 1]?.link, space);
 			const home = { href: `/${key}/`, label: HOME_LABELS[space][lang] };
-			page.breadcrumbs = [home, ...item.trail.filter((crumb) => crumb.label), item.link];
+			const link = named(item.link, space)!;
+			const trail = item.trail.filter((crumb) => crumb.label && crumb.label !== link.label);
+			page.breadcrumbs = [home, ...trail, link];
 		});
 	}
 

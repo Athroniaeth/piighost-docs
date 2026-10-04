@@ -23,6 +23,26 @@
 		{ href: 'https://piighost.dev', label: t.site, external: true }
 	]);
 
+	/**
+	 * Place the card of an identifier that sits in a table, fixed to the window
+	 * (app.css), under its link, or above it near the bottom of the window.
+	 */
+	function placeCard(event: Event) {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const link = target.closest('table .group\\/id');
+		const card = link?.querySelector<HTMLElement>('[role="tooltip"]');
+		if (!link || !card) return;
+		// The card keeps its 0.375rem top margin: below, it already makes the gap.
+		const box = link.getBoundingClientRect();
+		const gap = 6;
+		const margin = 8;
+		const fits = box.bottom + gap + card.offsetHeight + margin <= window.innerHeight;
+		const top = fits ? box.bottom : box.top - card.offsetHeight - 2 * gap;
+		card.style.top = `${Math.max(margin, top)}px`;
+		card.style.left = `${Math.max(margin, Math.min(box.left, window.innerWidth - card.offsetWidth - margin))}px`;
+	}
+
 	const locales = $derived([
 		{
 			code: 'fr' as const,
@@ -36,6 +56,8 @@
 		}
 	]);
 </script>
+
+<svelte:document onpointerover={placeCard} onfocusin={placeCard} />
 
 <svelte:head>
 	{#if chatUrl}
