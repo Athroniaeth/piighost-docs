@@ -291,9 +291,20 @@ class Builder {
 		if (!id || !trace || (trace.implementations.length === 0 && trace.tests.length === 0))
 			return undefined;
 		const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+		// The graph only sees the tests that call a rule's function directly. A
+		// test that goes through the pipeline is not counted, so "0 tests" would
+		// claim a covered rule untested: no count is shown rather than a false 0.
 		const text = [
-			count(trace.implementations.length, 'emplacement', 'emplacements'),
-			count(trace.tests.length, 'test', 'tests')
+			this.context.lang === 'fr'
+				? count(trace.implementations.length, 'emplacement', 'emplacements')
+				: count(trace.implementations.length, 'location', 'locations'),
+			...(trace.tests.length
+				? [
+						this.context.lang === 'fr'
+							? count(trace.tests.length, 'test direct', 'tests directs')
+							: count(trace.tests.length, 'direct test', 'direct tests')
+					]
+				: [])
 		].join(' · ');
 		return {
 			type: 'element',
