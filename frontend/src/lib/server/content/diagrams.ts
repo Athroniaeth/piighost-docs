@@ -6,9 +6,15 @@
  * belong to the image document and the page policy does not apply to them.
  * Each diagram is cached by the hash of its source, so a build only renders
  * the diagrams that changed.
+ *
+ * Mermaid writes `width="100%"` on the root element. Loaded through <img>, such
+ * an SVG has no width of its own and is stretched to the column, so a diagram
+ * 250 pixels wide was shown three times larger. Every render, cached ones
+ * included, is given the size of its viewBox instead: the column can shrink a
+ * diagram, never enlarge it.
  */
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { renderMermaid } from '@mermaid-js/mermaid-cli';
 import puppeteer, { type Browser } from 'puppeteer-core';
@@ -63,6 +69,31 @@ export async function closeDiagrams() {
 	browser = undefined;
 }
 
+/** The SVG with its viewBox size as its width and height, and no max-width style. */
+export function withIntrinsicSize(svg: string): string {
+	return svg.replace(/<svg\b[^>]*>/, (tag) => {
+		const box = /\sviewBox="([^"]+)"/
+			.exec(tag)?.[1]
+			.trim()
+			.split(/[\s,]+/)
+			.map(Number);
+		if (!box || box.length !== 4 || !(box[2] > 0 && box[3] > 0)) return tag;
+		const [width, height] = [Math.ceil(box[2]), Math.ceil(box[3])];
+		return tag
+			.replace(/\s(?:width|height)="[^"]*"/g, '')
+			.replace(/max-width:\s*[^;"]*;?\s*/, '')
+			.replace(/^<svg/, `<svg width="${width}" height="${height}"`);
+	});
+}
+
+async function render(code: string, mode: keyof typeof THEMES): Promise<string> {
+	const { data } = await renderMermaid(await launch(), code, 'svg', {
+		backgroundColor: 'transparent',
+		mermaidConfig: { ...THEMES[mode], securityLevel: 'strict' } as never
+	});
+	return new TextDecoder().decode(data);
+}
+
 /** The URLs of a diagram's two renders, rendering them when they are not cached. */
 export async function renderDiagram(code: string): Promise<{ light: string; dark: string }> {
 	const hash = createHash('sha256').update(code).digest('hex').slice(0, 16);
@@ -73,12 +104,10 @@ export async function renderDiagram(code: string): Promise<{ light: string; dark
 	};
 	for (const mode of ['light', 'dark'] as const) {
 		const file = join(DIAGRAMS_DIR, `${hash}-${mode}.svg`);
-		if (existsSync(file)) continue;
-		const { data } = await renderMermaid(await launch(), code, 'svg', {
-			backgroundColor: 'transparent',
-			mermaidConfig: { ...THEMES[mode], securityLevel: 'strict' } as never
-		});
-		writeFileSync(file, data);
+		const cached = existsSync(file) ? readFileSync(file, 'utf8') : undefined;
+		const svg = cached ?? (await render(code, mode));
+		const sized = withIntrinsicSize(svg);
+		if (sized !== cached) writeFileSync(file, sized);
 	}
 	return urls;
 }

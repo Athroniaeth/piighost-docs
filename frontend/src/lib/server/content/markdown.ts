@@ -33,7 +33,11 @@ const ADMONITIONS: Record<string, 'note' | 'tip' | 'warning' | 'danger'> = {
 	bug: 'danger'
 };
 
+/** The definition lists preprocess.ts writes, rendered as the HTML elements of the same name. */
+const DEFINITIONS = new Set(['dl', 'dt', 'dd']);
+
 const CONTAINERS = new Set([
+	...DEFINITIONS,
 	'tabs',
 	'tab',
 	'cards',
@@ -76,6 +80,12 @@ function directives(source: string) {
 						title: label ?? '',
 						collapsible: directive.attributes?.collapsible ?? ''
 					};
+				} else if (DEFINITIONS.has(directive.name)) {
+					data.hName = directive.name;
+					// A term or a one-paragraph definition holds its text, not a paragraph.
+					const [only, ...rest] = directive.children;
+					if (directive.name !== 'dl' && only?.type === 'paragraph' && rest.length === 0)
+						directive.children = only.children as never;
 				} else if (directive.name === 'caption') {
 					data.hName = 'p';
 					data.hProperties = { className: ['figure-caption'] };

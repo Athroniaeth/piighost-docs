@@ -10,6 +10,20 @@
 	overflow-x: auto;
 }
 
+/* Cells with room to breathe. A column never narrows below a few words, the
+   first one, which names the row, below a short phrase: on a narrow column the
+   table scrolls rather than stack one word per line. */
+.prose-piighost :is(th, td) {
+	min-width: 7rem;
+	padding: 0.75rem 1rem;
+	line-height: 1.6;
+	text-wrap: pretty;
+}
+
+.prose-piighost :is(th, td):first-child {
+	min-width: 10rem;
+}
+
 /* A table that scrolls clips whatever leaves it, so the card of an identifier
    in a table is fixed to the window instead. The layout places it under its
    link, through the CSS object model, which the style policy allows. */
@@ -23,6 +37,42 @@
 	text-align: center;
 	font-size: 0.875rem;
 	color: var(--muted-foreground);
+}
+
+/* A diagram shows at its own size, never larger: the SVG carries the size of
+   its drawing, and the column only shrinks it. A tall one stops at a screen's
+   height. On a phone it keeps a readable width and scrolls sideways inside its
+   figure, never the page. */
+.prose-piighost figure:has(> img.diagram-light) {
+	overflow-x: auto;
+}
+
+.prose-piighost figure > :is(img.diagram-light, img.diagram-dark) {
+	width: auto;
+	max-width: max(100%, 36rem);
+	max-height: 50rem;
+}
+
+/* The glossary: each term stands out, its definition sits under it, indented. */
+.prose-piighost dt {
+	font-weight: 600;
+	color: var(--foreground);
+}
+
+.prose-piighost dd + dt {
+	margin-block-start: 1.5rem;
+}
+
+.prose-piighost dd {
+	margin-block-start: 0.375rem;
+	padding-inline-start: 1rem;
+	border-inline-start: 2px solid var(--border);
+	color: var(--muted-foreground);
+	text-align: start;
+}
+
+.prose-piighost dd + dd {
+	margin-block-start: 0.75rem;
 }
 
 /* The rating scale of the security tables, from best to worst. The charter

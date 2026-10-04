@@ -17,6 +17,8 @@
  *   *text*                    :::caption            a figure caption
  *   { .figure-caption }
  *   *[ABBR]: definition       collected, removed    an abbreviation
+ *   Term                      ::::dl with :::dt and  a definition list
+ *   :   definition            :::dd children
  *   --8<-- "snippets/x.py:run"  the lines of that file or section, first of all
  *
  * Code fences are copied untouched: a line inside a fence is never read as one
@@ -32,6 +34,8 @@ const ADMONITION = /^(!!!|\?\?\?\+?)\s+(\w+)(?:\s+"([^"]*)")?\s*$/;
 const TAB = /^===\s+"([^"]*)"\s*$/;
 const FENCE = /^\s*(```+|~~~+)/;
 const ABBREVIATION = /^\*\[([^\]]+)\]:\s*(.+)$/;
+/** The first line of a definition, under its term: `:   text`. */
+const DEFINITION = /^:\s{1,3}(?=\S)/;
 const CARDS_OPEN = /^<div class="grid cards" markdown(?:="1")?>\s*$/;
 const ATTR_INLINE = /`([^`]+)`\{\s*\.(pii|placeholder)\s*\}/g;
 /** A bare placeholder in prose: CommonMark would read `<PERSON:1>` as a link. */
@@ -114,6 +118,51 @@ function convertCards(lines: string[]): string[] {
 	return out;
 }
 
+/** A term opens a definition list entry: an unindented line with a definition under it. */
+function isTerm(lines: string[], index: number): boolean {
+	const line = lines[index];
+	return (
+		line !== undefined &&
+		line.trim() !== '' &&
+		!/^\s/.test(line) &&
+		index + 1 < lines.length &&
+		DEFINITION.test(lines[index + 1])
+	);
+}
+
+/** The index of the next non-blank line from `index`. */
+function skipBlank(lines: string[], index: number): number {
+	while (index < lines.length && lines[index].trim() === '') index++;
+	return index;
+}
+
+/**
+ * A definition list, Python-Markdown's def_list: entries of one term line and
+ * one or more `:   ` definitions, whose following lines are indented by four.
+ */
+function convertDefinitions(lines: string[], start: number): { out: string[]; end: number } {
+	const entries: string[][] = [];
+	let index = start;
+	while (isTerm(lines, index)) {
+		entries.push([':::dt', inline(lines[index]), ':::']);
+		index++;
+		while (index < lines.length && DEFINITION.test(lines[index])) {
+			const { body, end } = takeIndented(lines, index + 1);
+			const inner = convert([lines[index].replace(DEFINITION, ''), ...body]);
+			const colons = ':'.repeat(Math.max(3, colonsIn(inner) + 1));
+			entries.push([`${colons}dd`, ...inner, colons]);
+			const next = skipBlank(lines, end);
+			index = next < lines.length && DEFINITION.test(lines[next]) ? next : end;
+		}
+		const next = skipBlank(lines, index);
+		if (!isTerm(lines, next)) break;
+		index = next;
+	}
+	const inner = entries.flat();
+	const colons = ':'.repeat(Math.max(4, colonsIn(inner) + 1));
+	return { out: ['', `${colons}dl`, ...inner, colons, ''], end: index };
+}
+
 /** Convert a run of lines, recursively for the bodies of containers. */
 function convert(lines: string[]): string[] {
 	const out: string[] = [];
@@ -186,6 +235,13 @@ function convert(lines: string[]): string[] {
 			const caption = out.splice(start);
 			out.push(':::caption', ...caption, ':::');
 			index++;
+			continue;
+		}
+
+		if ((out.length === 0 || out[out.length - 1].trim() === '') && isTerm(lines, index)) {
+			const definitions = convertDefinitions(lines, index);
+			out.push(...definitions.out);
+			index = definitions.end;
 			continue;
 		}
 
