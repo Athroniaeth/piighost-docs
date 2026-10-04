@@ -390,6 +390,7 @@ async function load(): Promise<Site> {
 			abbreviations: draft.abbreviations,
 			definitionAnchors: definedBy.get(draft.route) ?? new Map(),
 			slugStyle: draft.space === 'domain' ? 'github' : 'python-markdown',
+			lang: draft.lang,
 			problems: pageProblems
 		});
 		for (const problem of new Set(pageProblems)) problems.push(`${draft.repoPath}: ${problem}`);

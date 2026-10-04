@@ -30,6 +30,8 @@ export interface TreeContext {
 	definitionAnchors: Map<string, string>;
 	/** How headings become ids: the rule the page's links were written for. */
 	slugStyle: 'python-markdown' | 'github';
+	/** The page's language: French puts a narrow no-break space before : ; ! ? */
+	lang: 'fr' | 'en';
 	problems: string[];
 }
 
@@ -107,8 +109,17 @@ class Builder {
 			: null;
 	}
 
+	/** How many code elements enclose the current node: their text stays as written. */
+	codeDepth = 0;
+
 	/** Text, split around identifiers and abbreviations. */
-	text(value: string, linkify: boolean): ContentNode[] {
+	text(raw: string, linkify: boolean): ContentNode[] {
+		// French typography: the space before a high punctuation mark never
+		// breaks, so a line never starts with ":" and the gap stays narrow.
+		const value =
+			this.context.lang === 'fr' && this.codeDepth === 0
+				? raw.replace(/ ([:;!?])(?=\s|$)/g, '\u202f$1')
+				: raw;
 		if (!linkify) return [{ type: 'text', value }];
 		const out: ContentNode[] = [];
 		let last = 0;
@@ -250,13 +261,20 @@ class Builder {
 			if (tag === 'h2' || tag === 'h3') this.toc.push({ id, text, depth: tag === 'h2' ? 2 : 3 });
 		} else if (BLOCKS.has(tag)) {
 			const definition = this.definitionFor(toString(node));
-			if (definition && attrs.id === undefined) attrs.id = definition;
+			if (definition && attrs.id === undefined) {
+				attrs.id = definition;
+				// A need reads as a statement, underlined, apart from its criteria.
+				if (/^(dpo|dev|ops|user)-\d+$/.test(definition))
+					attrs.class = [attrs.class, 'need-definition'].filter(Boolean).join(' ');
+			}
 		}
 		if (tag === 'table') attrs.class = [attrs.class, 'table-scroll'].filter(Boolean).join(' ');
 
 		// Code, links and abbreviations already set are never re-read for identifiers.
 		const keepLinking = linkify && tag !== 'code' && tag !== 'a' && tag !== 'abbr';
+		if (tag === 'code') this.codeDepth++;
 		const children = await this.children(node.children, keepLinking);
+		if (tag === 'code') this.codeDepth--;
 		const traced =
 			tag === 'p' && typeof attrs.id === 'string' ? this.traceLink(String(attrs.id)) : undefined;
 		if (traced) children.push({ type: 'text', value: ' ' }, traced);

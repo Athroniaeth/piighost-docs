@@ -139,3 +139,11 @@
 	border-color: var(--primary);
 	color: var(--primary);
 }
+
+/* A need is the statement its criteria follow: underlined, in the primary. */
+.prose-piighost p.need-definition {
+	text-decoration-line: underline;
+	text-decoration-color: color-mix(in oklch, var(--primary) 60%, transparent);
+	text-decoration-thickness: 0.1em;
+	text-underline-offset: 0.3em;
+}
