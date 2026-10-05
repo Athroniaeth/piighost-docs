@@ -9,7 +9,7 @@ The site holds no copy of the documentation. It reads a checkout of the
 | Space | Source in `piighost` | Route |
 |---|---|---|
 | Technical guide | `docs/fr`, `docs/en`, navigation from `docs/zensical*.toml` | `/fr/guide/…`, `/en/guide/…` |
-| Business wiki | `openwiki/`, maintained by OpenWiki | `/fr/wiki/…` |
+| Business wiki | `openwiki/`, maintained by OpenWiki | `/fr/domain/…`, `/en/domain/…` |
 
 The pages stay written in the Zensical dialect (admonitions, tabs, cards,
 `{ .pii }` chips): `frontend/src/lib/server/content/preprocess.ts` turns it into
@@ -25,8 +25,11 @@ The build fails rather than ship a broken page:
   does not define, or that it defines twice,
 - a missing image.
 
-Every identifier is a link with a hover card, and `/ids/<ID>/` is the stable
-URL to cite from code, issues and the chatbot.
+Every identifier is a link with a hover card. Its card, `/fr/ids/<ID>/` and
+`/en/ids/<ID>/`, is the stable URL to cite from code, issues and the chatbot:
+`/ids/<ID>/` leads to the reader's language. A rule's card lists the code the
+wiki locates and the tests the code graph reaches, directly or through its
+module.
 
 ## Develop
 
