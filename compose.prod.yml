@@ -23,8 +23,9 @@ services:
       target: web
     environment:
       # Magic variable, intentionally valueless: Coolify fills it in and routes
-      # the domain to port 8080 (nginx runs unprivileged).
-      - SERVICE_FQDN_WEB_8080
+      # the domain to port 8080 (nginx runs unprivileged). A mapping, not a list:
+      # Coolify adds its own variables as a mapping and cannot merge the two.
+      SERVICE_FQDN_WEB_8080: ""
     restart: unless-stopped
 
   docs-mcp:
@@ -32,7 +33,7 @@ services:
       <<: *build
       target: docs-mcp
     environment:
-      - PIIGHOST_BASE_URL=${DOCS_BASE_URL:-https://docs.piighost.dev}
+      PIIGHOST_BASE_URL: ${DOCS_BASE_URL:-https://docs.piighost.dev}
     restart: unless-stopped
 
   graph-mcp:
