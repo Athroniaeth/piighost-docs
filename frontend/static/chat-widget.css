@@ -1,0 +1,27 @@
+/* The documentation's rules for the chatbot's widget, loaded inside its shadow
+   root. Chainlit's copilot appends each stylesheet its theme lists under
+   `custom_fonts`, and loads Google's Inter when the list is empty, which the
+   page's policy refuses: chat-widget.js adds this file to the list. The fonts
+   themselves are the page's, self-hosted, which the shadow root inherits. */
+
+/* On a phone the panel takes the screen above its button, instead of a card
+   with a band on each side and the button over its notice. */
+@media (width < 40rem) {
+	#chainlit-copilot-button {
+		width: 3rem;
+		height: 3rem;
+		right: 1rem;
+		bottom: 1rem;
+	}
+
+	[data-radix-popper-content-wrapper] {
+		transform: none !important;
+		inset: 0.5rem 0.5rem 4.75rem !important;
+		min-width: 0 !important;
+	}
+
+	[data-radix-popper-content-wrapper] > [role='dialog'] {
+		width: 100% !important;
+		height: 100% !important;
+	}
+}
