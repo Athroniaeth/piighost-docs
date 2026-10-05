@@ -45,6 +45,8 @@ jobs:
         run: pnpm -C frontend content:check
         env:
           PIIGHOST_CONTENT: ${{ github.workspace }}/content/piighost
+          # The diagrams render in a browser: the runner ships Google Chrome.
+          CHROMIUM_PATH: /usr/bin/google-chrome
 
       # Coolify builds the images itself, from master: the newest content.
       - name: Deploy
