@@ -116,8 +116,8 @@ importers:
         specifier: ^1.4.1
         version: 1.4.1
       '@piighost/ui':
-        specifier: file:vendor/piighost-ui-0.2.2.tgz
-        version: file:vendor/piighost-ui-0.2.2.tgz(svelte@5.57.1(@typescript-eslint/types@8.71.0))
+        specifier: file:vendor/piighost-ui-0.2.3.tgz
+        version: file:vendor/piighost-ui-0.2.3.tgz(svelte@5.57.1(@typescript-eslint/types@8.71.0))
     devDependencies:
       '@eslint/js':
         specifier: ^10.0.1
@@ -736,9 +736,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@piighost/ui@file:vendor/piighost-ui-0.2.2.tgz':
-    resolution: {integrity: sha512-bc/fLQJNc/CZQz37LBKnQhHXGkkZaoKmPf04M7WaMFKYMLzwG+WnHqpiTAw5SInaYKKLwF/X5LHfJevMikPwsQ==, tarball: file:vendor/piighost-ui-0.2.2.tgz}
-    version: 0.2.2
+  '@piighost/ui@file:vendor/piighost-ui-0.2.3.tgz':
+    resolution: {integrity: sha512-hrhekrcUcH/7F1nLDjwn0wvUan0Mg3AbuwdL1zPtIDXHVkEvQWfyVOQxB7fns0D3OHzOQjZaFjMXmsBaIOhW5w==, tarball: file:vendor/piighost-ui-0.2.3.tgz}
+    version: 0.2.3
     peerDependencies:
       svelte: ^5.0.0
 
@@ -3294,7 +3294,7 @@ snapshots:
   '@pagefind/windows-x64@1.5.2':
     optional: true
 
-  '@piighost/ui@file:vendor/piighost-ui-0.2.2.tgz(svelte@5.57.1(@typescript-eslint/types@8.71.0))':
+  '@piighost/ui@file:vendor/piighost-ui-0.2.3.tgz(svelte@5.57.1(@typescript-eslint/types@8.71.0))':
     dependencies:
       '@fontsource-variable/schibsted-grotesk': 5.3.0
       '@fontsource/ibm-plex-mono': 5.3.0
