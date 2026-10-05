@@ -55,9 +55,9 @@
 	});
 	const alternate = $derived((page.data as { alternate?: string }).alternate);
 
-	/** The ecosystem menu every piighost header shares, without the philosophy and the registry. */
+	/** The ecosystem menu every piighost header shares, whole. */
 	const links = $derived(
-		ecosystemLinks('docs', lang, ['philosophy', 'catalog']).map((link) =>
+		ecosystemLinks('docs', lang).map((link) =>
 			// The docs link stays on this site, whatever host serves it.
 			link.label === 'Docs' ? { ...link, href: `/${lang}/` } : link
 		)
@@ -146,13 +146,14 @@
 	{links}
 	{local}
 	localStyle="segmented"
+	wide
 	menuActions={controls}
 	mainNavigationLabel={t.mainNavigation}
 	menuLabel={t.menu}
 >
 	{#snippet actions()}
 		<Search {lang} />
-		<span class="hidden items-center gap-1 lg:flex">{@render controls()}</span>
+		<span class="hidden items-center gap-1 xl:flex">{@render controls()}</span>
 	{/snippet}
 </SiteNav>
 
