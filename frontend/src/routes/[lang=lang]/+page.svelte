@@ -75,6 +75,8 @@
 	<link rel="canonical" href="https://docs.piighost.dev/{lang}/" />
 	<link rel="alternate" hreflang="fr" href="https://docs.piighost.dev/fr/" />
 	<link rel="alternate" hreflang="en" href="https://docs.piighost.dev/en/" />
+	<!-- The root picks the reader's language. -->
+	<link rel="alternate" hreflang="x-default" href="https://docs.piighost.dev/" />
 </svelte:head>
 
 <main id="content" class="mx-auto max-w-5xl space-y-14 px-6 py-14">

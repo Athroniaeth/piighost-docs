@@ -16,6 +16,16 @@ export async function GET() {
 			: '';
 		return `<url><loc>${url(page.route)}</loc>${alternate}</url>`;
 	});
-	const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${['/fr/', '/en/'].map((route) => `<url><loc>${url(route)}</loc></url>`).join('\n')}\n${entries.join('\n')}\n</urlset>\n`;
+	// The two homes, and the root that picks between them.
+	const homeLinks = ['fr', 'en', 'x-default']
+		.map(
+			(lang) =>
+				`<xhtml:link rel="alternate" hreflang="${lang}" href="${url(lang === 'x-default' ? '/' : `/${lang}/`)}"/>`
+		)
+		.join('');
+	const homes = ['/fr/', '/en/']
+		.map((route) => `<url><loc>${url(route)}</loc>${homeLinks}</url>`)
+		.join('\n');
+	const body = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${homes}\n${entries.join('\n')}\n</urlset>\n`;
 	return new Response(body, { headers: { 'content-type': 'application/xml; charset=utf-8' } });
 }
