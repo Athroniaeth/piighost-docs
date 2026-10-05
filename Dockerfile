@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # The documentation site and its two MCP servers, from one build of the content.
 #
-# The site holds no copy of the documentation: the clone stage reads piighost at
+# The site holds no copy of the documentation: the content stage reads piighost at
 # PIIGHOST_REF, a branch or a commit. To build from a local commit instead,
 # export it, so the build sees what a clone would and none of the checkout's
 # virtualenvs or caches:
@@ -15,18 +15,13 @@
 #   graph-mcp  graphify's MCP server over the code graph of piighost
 ARG CONTENT=content-git
 
-FROM alpine:3.22 AS clone
-RUN apk add --no-cache git
+# BuildKit's own git source, not a RUN git fetch: it resolves the branch to its
+# commit at every build, so a new commit on piighost misses the cache. A RUN
+# keyed on the branch name stayed cached and served the old pages.
+FROM scratch AS content-git
 ARG PIIGHOST_REPO=https://github.com/Athroniaeth/piighost.git
 ARG PIIGHOST_REF=master
-# A fetch rather than a clone: a fetch takes a commit as well as a branch.
-RUN git init -q /content \
-    && git -C /content fetch -q --depth 1 "$PIIGHOST_REPO" "$PIIGHOST_REF" \
-    && git -C /content checkout -q FETCH_HEAD \
-    && rm -rf /content/.git
-
-FROM scratch AS content-git
-COPY --from=clone /content /
+ADD ${PIIGHOST_REPO}#${PIIGHOST_REF} /
 
 FROM ${CONTENT} AS content
 
