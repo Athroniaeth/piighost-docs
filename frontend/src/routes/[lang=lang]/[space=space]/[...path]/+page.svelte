@@ -1,17 +1,26 @@
 <script lang="ts">
-	import { Breadcrumbs, Content, PageActions, PrevNext, SidebarTree, Toc } from '@piighost/ui';
+	import { Content, PageActions, PrevNext, SidebarTree, Toc } from '@piighost/ui';
 	import { labels } from '#lib/i18n.js';
+	import Breadcrumbs from '#lib/components/Breadcrumbs.svelte';
 	import CopyPageMenu from '#lib/components/CopyPageMenu.svelte';
+	import FoldedPanel from '#lib/components/FoldedPanel.svelte';
 
 	let { data } = $props();
 
 	const lang = $derived(data.page.route.startsWith('/en/') ? 'en' : 'fr');
 	const t = $derived(labels(lang));
 	const isDomain = $derived(data.page.route.includes('/domain/'));
+	// The guide's home is titled "piighost": the tab names the space instead
+	// of "piighost · piighost".
+	const title = $derived(
+		data.page.title.trim().toLowerCase() === 'piighost'
+			? `${isDomain ? t.domain : t.guide} · piighost`
+			: `${data.page.title} · piighost`
+	);
 </script>
 
 <svelte:head>
-	<title>{data.page.title} · piighost</title>
+	<title>{title}</title>
 	<meta name="description" content={data.page.description} />
 	<link rel="canonical" href="https://docs.piighost.dev{data.page.route}" />
 	{#if data.alternate}
@@ -22,7 +31,7 @@
 		/>
 		<link rel="alternate" hreflang={lang} href="https://docs.piighost.dev{data.page.route}" />
 	{/if}
-	<meta property="og:title" content="{data.page.title} · piighost" />
+	<meta property="og:title" content={title} />
 	<meta property="og:description" content={data.page.description} />
 </svelte:head>
 
@@ -51,21 +60,17 @@
 		<!-- Below the widths that show the two columns, the section tree and the
 		     page outline fold above the content. -->
 		<div class="mb-6 grid gap-2 xl:hidden" data-pagefind-ignore>
-			<details class="rounded-lg border bg-card lg:hidden">
-				<summary class="cursor-pointer px-4 py-2.5 text-sm font-semibold">
-					{isDomain ? t.domain : t.guide}
-				</summary>
+			<FoldedPanel label={isDomain ? t.domain : t.guide} class="lg:hidden">
 				<div class="max-h-[60dvh] overflow-y-auto px-2 pb-3">
 					<SidebarTree nodes={data.nav} current={data.page.route} />
 				</div>
-			</details>
+			</FoldedPanel>
 			{#if data.page.toc.length > 1}
-				<details class="rounded-lg border bg-card">
-					<summary class="cursor-pointer px-4 py-2.5 text-sm font-semibold">{t.onThisPage}</summary>
+				<FoldedPanel label={t.onThisPage}>
 					<div class="toc-folded max-h-[60dvh] overflow-y-auto px-4 pb-3">
 						<Toc entries={data.page.toc} title={t.onThisPage} />
 					</div>
-				</details>
+				</FoldedPanel>
 			{/if}
 		</div>
 		<article class="prose-piighost">
@@ -94,8 +99,9 @@
 		</div>
 	</main>
 
+	<!-- The outline ends above the chatbot's button, bottom right of the window. -->
 	<aside class="hidden xl:block" data-pagefind-ignore>
-		<div class="sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto pe-2 pb-24">
+		<div class="sticky top-24 max-h-[calc(100dvh-13rem)] overflow-y-auto pe-2 pb-8">
 			<Toc entries={data.page.toc} title={t.onThisPage} />
 		</div>
 	</aside>

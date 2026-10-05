@@ -418,6 +418,24 @@ async function load(): Promise<Site> {
 		if (draft && page) nav.set(key, listProfiles(nav.get(key)!, page, draft));
 	}
 
+	/** The first crumb: the guide's home, or the domain documentation's first page. */
+	const homeCrumb = (lang: Language, space: Space): NavLink => ({
+		href: space === 'domain' ? `/${lang}/domain/quickstart/` : `/${lang}/guide/`,
+		label: HOME_LABELS[space][lang]
+	});
+	/**
+	 * A section of the tree is a heading, not a page: its crumb leads to the
+	 * folder's index when the wiki has one, and is plain text otherwise (the
+	 * guide's sections have none).
+	 */
+	const sectionHref = (crumb: NavLink, lang: Language, space: Space): string => {
+		if (crumb.href) return crumb.href;
+		if (space !== 'domain') return '';
+		const folder = WIKI_SECTIONS.find(([, names]) => names[lang] === crumb.label)?.[0];
+		const route = folder ? `/${lang}/domain/${folder}/` : '';
+		return pages.has(route) ? route : '';
+	};
+
 	// A domain page is named by its title, even where the tree shows it under
 	// another label: the needs page opens on its first heading. The guide keeps
 	// the labels of its Zensical nav.
@@ -433,12 +451,20 @@ async function load(): Promise<Site> {
 			if (!page) return;
 			page.previous = named(order[index - 1]?.link, space);
 			page.next = named(order[index + 1]?.link, space);
-			const home = { href: `/${key}/`, label: HOME_LABELS[space][lang] };
 			const link = named(item.link, space)!;
-			const trail = item.trail.filter((crumb) => crumb.label && crumb.label !== link.label);
-			page.breadcrumbs = [home, ...trail, link];
+			const trail = item.trail
+				.filter((crumb) => crumb.label && crumb.label !== link.label)
+				.map((crumb) => ({ label: crumb.label, href: sectionHref(crumb, lang, space) }));
+			page.breadcrumbs = [homeCrumb(lang, space), ...trail, link];
 		});
 	}
+	// A page outside the tree, a wiki folder's index: under its space's home.
+	for (const page of pages.values())
+		if (page.breadcrumbs.length === 0)
+			page.breadcrumbs = [
+				homeCrumb(page.lang, page.space),
+				{ href: page.route, label: page.title }
+			];
 
 	return { pages, nav, ids, problems };
 }
