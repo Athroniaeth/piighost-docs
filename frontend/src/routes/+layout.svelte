@@ -30,7 +30,18 @@
 		track({ name: 'page_view', props: { space: page.url.pathname.split('/')[2] ?? 'home', lang } });
 	});
 	const t = $derived(labels(lang));
-	const space = $derived(page.url.pathname.split('/')[2]);
+	// An identifier's card belongs to the domain documentation.
+	const space = $derived.by(() => {
+		const segment = page.url.pathname.split('/')[2];
+		return segment === 'ids' ? 'domain' : segment;
+	});
+
+	// The server writes the language on <html> for the first page only: a
+	// navigation inside the site must carry it, for screen readers, hyphenation
+	// and the French spacing rules alike.
+	$effect(() => {
+		document.documentElement.lang = lang;
+	});
 	const alternate = $derived((page.data as { alternate?: string }).alternate);
 
 	/** The ecosystem menu every piighost header shares, without the philosophy and the registry. */
@@ -48,19 +59,29 @@
 	]);
 
 	/**
-	 * Place the card of an identifier that sits in a table, fixed to the window
-	 * (app.css), under its link, or above it near the bottom of the window.
+	 * Keep the card of an identifier inside the window. In a table, which clips
+	 * what leaves it, the card is fixed to the window (app.css) and placed under
+	 * its link, or above it near the bottom of the window. Elsewhere it hangs
+	 * under its link and is moved left as far as the right edge needs. Through
+	 * the CSS object model, which the style policy allows.
 	 */
 	function placeCard(event: Event) {
 		const target = event.target;
 		if (!(target instanceof Element)) return;
-		const link = target.closest('table .group\\/id');
+		const link = target.closest('.group\\/id');
 		const card = link?.querySelector<HTMLElement>('[role="tooltip"]');
 		if (!link || !card) return;
+		const margin = 8;
+		if (!link.closest('table')) {
+			card.style.left = '';
+			const box = card.getBoundingClientRect();
+			const over = box.right - (document.documentElement.clientWidth - margin);
+			if (over > 0) card.style.left = `${-Math.min(over, box.left - margin)}px`;
+			return;
+		}
 		// The card keeps its 0.375rem top margin: below, it already makes the gap.
 		const box = link.getBoundingClientRect();
 		const gap = 6;
-		const margin = 8;
 		const fits = box.bottom + gap + card.offsetHeight + margin <= window.innerHeight;
 		const top = fits ? box.bottom : box.top - card.offsetHeight - 2 * gap;
 		card.style.top = `${Math.max(margin, top)}px`;
