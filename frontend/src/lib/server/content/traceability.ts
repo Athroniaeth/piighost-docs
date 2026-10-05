@@ -26,8 +26,13 @@ export interface CodeRef {
 export interface Trace {
 	/** The functions and classes at the lines the wiki gives. */
 	implementations: CodeRef[];
-	/** The tests that call them, as pytest node ids. */
+	/** The tests that call them, or their class, themselves or through a test helper, as pytest node ids. */
 	tests: CodeRef[];
+	/**
+	 * The tests that reach them through the code of their own module: a private
+	 * function the public method calls, which the test calls.
+	 */
+	indirectTests: CodeRef[];
 	/** Other code that calls them. */
 	callers: CodeRef[];
 }
@@ -54,6 +59,12 @@ const RULE = /BR-[A-Z]+-\d{2}/g;
 /** `BR-TOOL-01 à BR-TOOL-04`: every rule of the range. */
 const RANGE = /(BR-[A-Z]+-)(\d{2})\s+à\s+BR-[A-Z]+-(\d{2})/g;
 const PATH = /^([\w./-]+\.py)(?::(\d+)(?:-(\d+))?)?$/;
+/** `_thread_id`, `flush`, `InMemoryConfig`: a name the cell gives beside its path. */
+const NAME = /^[A-Za-z_]\w*$/;
+/** A module constant's definition, `MAX_TOKEN_LENGTH = 128`, `_TOOL_FIELDS: dict = {`. */
+const CONSTANT = /^(_?[A-Z][A-Z0-9_]*)\s*[:=]/;
+/** How many calls inside its own module a test may go through to reach a rule. */
+const MODULE_HOPS = 3;
 /** `_neutralize lignes 79-95`, after a path: lines of the path before. */
 const LINES_AFTER = /lignes?\s+(\d+)(?:-(\d+))?/g;
 
@@ -79,6 +90,8 @@ class Graph {
 	classOfMethod = new Map<string, GraphNode>();
 	byFile = new Map<string, GraphNode[]>();
 	files: string[] = [];
+	/** The classes that extend each class, read from the source: graphify loses `Base[T]`. */
+	subclasses = new Map<string, GraphNode[]>();
 
 	constructor(data: { nodes: GraphNode[]; links: GraphEdge[] }) {
 		for (const node of data.nodes) {
@@ -99,6 +112,77 @@ class Graph {
 				if (owner) this.classOfMethod.set(edge.target, owner);
 			}
 		}
+		this.readSubclasses();
+	}
+
+	/**
+	 * `class AnonymizationPipeline(BaseAnonymizationPipeline[T])`: graphify keeps
+	 * no edge for a generic base, so a test that builds the subclass would not
+	 * reach the base's methods. The declarations are read from the source.
+	 */
+	readSubclasses() {
+		const classes = new Map<string, GraphNode[]>();
+		for (const list of this.byFile.values())
+			for (const node of list)
+				if (/^[A-Z]\w*$/.test(node.label))
+					classes.set(node.label, [...(classes.get(node.label) ?? []), node]);
+		for (const [file, list] of this.byFile) {
+			if (!file.startsWith('src/')) continue;
+			const path = join(CONTENT_ROOT, file);
+			if (!existsSync(path)) continue;
+			const source = readFileSync(path, 'utf8');
+			for (const [, name, bases] of source.matchAll(/^class (\w+)\(([^)]*)\)/gm)) {
+				const child = list.find((node) => node.label === name);
+				if (!child) continue;
+				for (const base of bases.split(',')) {
+					const bare = base.replace(/\[.*$/s, '').trim().split('.').pop() ?? '';
+					const parents = classes.get(bare) ?? [];
+					const parent = parents.find((node) => node.source_file === file) ?? parents[0];
+					if (parent && parent !== child)
+						this.subclasses.set(parent.id, [...(this.subclasses.get(parent.id) ?? []), child]);
+				}
+			}
+		}
+	}
+
+	/** A class and every class that extends it, at any depth. */
+	family(node: GraphNode): GraphNode[] {
+		const out = [node];
+		for (let index = 0; index < out.length; index++)
+			for (const child of this.subclasses.get(out[index].id) ?? [])
+				if (!out.includes(child)) out.push(child);
+		return out;
+	}
+
+	/** The classes and functions a module defines at its top level. */
+	topLevel(file: string): GraphNode[] {
+		return (this.byFile.get(file) ?? []).filter(
+			(node) => lineOf(node) > 1 && !this.classOfMethod.has(node.id) && !node.label.endsWith('.py')
+		);
+	}
+
+	/** The functions and classes of a file named `name`, a method by its bare name. */
+	named(file: string, name: string): GraphNode[] {
+		return (this.byFile.get(file) ?? []).filter(
+			(node) => strip(node.label).replace(/\(\)$/, '') === name
+		);
+	}
+
+	/**
+	 * The functions and classes a range of lines holds. The wiki's lines drift
+	 * as the code moves: `base.py:313-341` names `_guard`, which starts at 333.
+	 * The definitions that start in the range are the rule's; the one that
+	 * encloses its first line only when none starts near it.
+	 */
+	within(file: string, start: number, end: number): GraphNode[] {
+		const inside = (this.byFile.get(file) ?? []).filter(
+			(node) => lineOf(node) >= start && lineOf(node) <= end && !node.label.endsWith('.py')
+		);
+		// A module constant belongs to no function, whatever comes before it.
+		const first = this.linesOf(file)[start - 1] ?? '';
+		const enclosing = CONSTANT.test(first) ? undefined : this.at(file, start);
+		const near = inside.some((node) => lineOf(node) - start <= 3);
+		return enclosing && !near && !inside.includes(enclosing) ? [enclosing, ...inside] : inside;
 	}
 
 	/**
@@ -150,7 +234,7 @@ class Graph {
 		const lines = readFileSync(path, 'utf8').split('\n');
 		const names = lines
 			.slice(start - 1, end)
-			.map((line) => /^([A-Z][A-Z0-9_]*)\s*[:=]/.exec(line)?.[1])
+			.map((line) => CONSTANT.exec(line)?.[1])
 			.filter((name): name is string => !!name);
 		if (names.length === 0) return [];
 		const uses = new RegExp(`\\b(?:${names.join('|')})\\b`);
@@ -177,25 +261,144 @@ class Graph {
 		};
 	}
 
-	/** Who calls a node, the test methods apart. */
-	users(node: GraphNode): { tests: GraphNode[]; callers: GraphNode[] } {
-		const tests: GraphNode[] = [];
-		const callers: GraphNode[] = [];
-		const targets = [node];
-		// A test exercises a method through its class as often as directly.
-		const owner = this.classOfMethod.get(node.id);
-		if (owner) targets.push(owner);
-		for (const target of targets) {
-			for (const edge of this.incoming.get(target.id) ?? []) {
-				if (!CALL_RELATIONS.has(edge.relation)) continue;
-				const source = this.nodes.get(edge.source);
-				if (!source?.source_file) continue;
-				if (source.source_file.startsWith('tests/')) {
-					if (/^\.?test_/.test(source.label)) tests.push(source);
-				} else if (source.id !== node.id) callers.push(source);
+	/** A file of the checkout, as lines, read once. */
+	linesOf(file: string): string[] {
+		let lines = this.sources.get(file);
+		if (!lines) {
+			const path = join(CONTENT_ROOT, file);
+			lines = existsSync(path) ? readFileSync(path, 'utf8').split('\n') : [];
+			this.sources.set(file, lines);
+		}
+		return lines;
+	}
+
+	/** The line a module constant is defined on, 0 when the file does not define it. */
+	constantLine(file: string, name: string): number {
+		return this.linesOf(file).findIndex((line) => CONSTANT.exec(line)?.[1] === name) + 1;
+	}
+
+	/**
+	 * The tests that read a module constant by name, `WORD_JOIN_CHARS`, in a
+	 * test file that imports its module: graphify keeps no node for a constant.
+	 */
+	testsNaming(file: string, names: string[]): GraphNode[] {
+		if (names.length === 0) return [];
+		const module = file
+			.replace(/^src\//, '')
+			.replace(/(\/__init__)?\.py$/, '')
+			.replaceAll('/', '.');
+		const uses = new RegExp(`\\b(?:${names.join('|')})\\b`);
+		const out: GraphNode[] = [];
+		for (const [path, nodes] of this.byFile) {
+			if (!path.startsWith('tests/') || !this.linesOf(path).join('\n').includes(module)) continue;
+			for (const node of nodes)
+				if (/^\.?test_/.test(node.label) && uses.test(this.bodyOf(node))) out.push(node);
+		}
+		return out;
+	}
+
+	/**
+	 * The tests that call a module function by its name, `module._thread_id()`,
+	 * in a test file that names its module: graphify does not follow a call
+	 * through `importlib`, nor through an alias. A helper of the test file that
+	 * calls it brings the tests that call the helper.
+	 */
+	testsCallingByName(node: GraphNode): GraphNode[] {
+		if (this.classOfMethod.has(node.id) || !node.source_file) return [];
+		const name = strip(node.label).replace(/\(\)$/, '');
+		if (!/^\w+$/.test(name)) return [];
+		const module = node.source_file
+			.replace(/^src\//, '')
+			.replace(/(\/__init__)?\.py$/, '')
+			.replaceAll('/', '.');
+		const call = new RegExp(`(?<![\\w.])(?:\\w+\\.)?${name}\\(`);
+		const out = new Set<GraphNode>();
+		for (const [path, nodes] of this.byFile) {
+			if (!path.startsWith('tests/') || !this.linesOf(path).join('\n').includes(module)) continue;
+			for (const test of nodes) {
+				const body = this.bodyOf(test).replace(
+					new RegExp(`^\\s*(?:async\\s+)?def\\s+${name}\\(`),
+					''
+				);
+				if (!call.test(body)) continue;
+				if (/^\.?test_/.test(test.label)) out.add(test);
+				else
+					for (const edge of this.incoming.get(test.id) ?? []) {
+						const caller = this.nodes.get(edge.source);
+						if (CALL_RELATIONS.has(edge.relation) && caller && /^\.?test_/.test(caller.label))
+							out.add(caller);
+					}
 			}
 		}
-		return { tests, callers };
+		return [...out];
+	}
+
+	/** The source lines of a definition, up to the next definition of its file. */
+	bodyOf(node: GraphNode): string {
+		const file = node.source_file ?? '';
+		const lines = this.linesOf(file);
+		const from = lineOf(node);
+		const next = (this.byFile.get(file) ?? []).find((other) => lineOf(other) > from);
+		return lines.slice(from - 1, next ? lineOf(next) - 1 : lines.length).join('\n');
+	}
+	sources = new Map<string, string[]>();
+
+	/**
+	 * Who calls a node. A test calls it directly when it, or a helper of its
+	 * test file (`_stream`, `_pipeline`), calls it by name: graphify does not
+	 * resolve `decoder.flush()` on an instance, so a test that builds the class
+	 * and writes `.flush(` in its body calls it too. A test that only builds
+	 * the class, or one that reaches the function through other functions of
+	 * its module (the public method that calls a private helper), exercises
+	 * it indirectly. Code elsewhere that calls it is a caller.
+	 */
+	users(start: GraphNode): { tests: GraphNode[]; indirect: GraphNode[]; callers: GraphNode[] } {
+		const tests = new Set<GraphNode>();
+		const indirect = new Set<GraphNode>();
+		const callers = new Set<GraphNode>();
+		const seen = new Set<string>();
+		type Step = { node: GraphNode; direct: boolean; hops: number };
+		const queue: Step[] = [{ node: start, direct: true, hops: 0 }];
+		while (queue.length) {
+			const { node, direct, hops } = queue.shift()!;
+			const key = `${node.id}:${direct}`;
+			if (seen.has(key) || (!direct && seen.has(`${node.id}:true`))) continue;
+			seen.add(key);
+			const name = strip(node.label).replace(/\(\)$/, '');
+			const owner = this.classOfMethod.get(node.id);
+			const byName = new RegExp(`\\.${name.replace(/\W/g, '')}\\(`);
+			// A method is reached through its class and the classes that extend
+			// it; a class through the classes that extend it.
+			const targets = [
+				{ target: node, own: true },
+				...(owner ? this.family(owner) : this.family(node).slice(1)).map((target) => ({
+					target,
+					own: false
+				}))
+			];
+			for (const { target, own } of targets) {
+				for (const edge of this.incoming.get(target.id) ?? []) {
+					const source = this.nodes.get(edge.source);
+					// A nested function runs when the function that holds it does.
+					if (edge.relation === 'contains' && source?.label.endsWith('()') && hops < MODULE_HOPS)
+						queue.push({ node: source, direct: false, hops: hops + 1 });
+					if (!CALL_RELATIONS.has(edge.relation)) continue;
+					if (!source?.source_file || source.id === start.id) continue;
+					if (source.source_file.startsWith('tests/')) {
+						const calls = own || name === '__init__' || !owner || byName.test(this.bodyOf(source));
+						const reach = direct && calls;
+						// A helper of the test file is part of the tests that call it.
+						if (/^\.?test_/.test(source.label)) (reach ? tests : indirect).add(source);
+						else queue.push({ node: source, direct: reach, hops });
+					} else if (source.source_file === start.source_file) {
+						if (hops === 0 && own) callers.add(source);
+						if (hops < MODULE_HOPS) queue.push({ node: source, direct: false, hops: hops + 1 });
+					} else if (hops === 0 && own) callers.add(source);
+				}
+			}
+		}
+		for (const test of tests) indirect.delete(test);
+		return { tests: [...tests], indirect: [...indirect], callers: [...callers] };
 	}
 }
 
@@ -210,6 +413,8 @@ interface Reference {
 	line: number;
 	/** The last line of a range, `memory.py:13-25`, the line itself otherwise. */
 	end: number;
+	/** A definition the cell names, `(\`_thread_id\`)`, in the file before it. */
+	name?: string;
 }
 
 function referencesOf(tree: Root, graph: Graph): Map<string, Reference[]> {
@@ -231,7 +436,15 @@ function referencesOf(tree: Root, graph: Graph): Map<string, Reference[]> {
 			let last: string | undefined;
 			for (const child of second.children) {
 				if (child.type === 'inlineCode') {
-					const match = PATH.exec((child as InlineCode).value);
+					const value = (child as InlineCode).value;
+					if (last && NAME.test(value)) {
+						const line = graph.constantLine(last, value);
+						refs.push(
+							line ? { file: last, line, end: line } : { file: last, line: 0, end: 0, name: value }
+						);
+						continue;
+					}
+					const match = PATH.exec(value);
 					if (!match) continue;
 					const file = graph.file(match[1], last ? [last, ...context] : context);
 					if (!file) continue;
@@ -250,6 +463,9 @@ function referencesOf(tree: Root, graph: Graph): Map<string, Reference[]> {
 }
 
 const unique = (refs: CodeRef[]) => [...new Map(refs.map((ref) => [ref.label, ref])).values()];
+const unique_nodes = (nodes: GraphNode[]) => [
+	...new Map(nodes.map((node) => [node.id, node])).values()
+];
 
 /** The trace of every rule the wiki locates, or an empty map without a graph. */
 export function traceRules(trees: Root[]): Map<string, Trace> {
@@ -257,41 +473,78 @@ export function traceRules(trees: Root[]): Map<string, Trace> {
 	const traces = new Map<string, Trace>();
 	if (!graph) return traces;
 	for (const tree of trees) {
-		for (const [rule, refs] of referencesOf(tree, graph)) {
+		for (const [rule, all] of referencesOf(tree, graph)) {
+			const named = all.filter((ref) => ref.name);
+			const refs = all.filter((ref) => !ref.name);
 			const placed = refs.map((ref) => ({
 				ref,
-				node: ref.line ? graph.at(ref.file, ref.line) : undefined
+				nodes: ref.line ? graph.within(ref.file, ref.line, ref.end) : []
 			}));
-			const nodes = placed.map((item) => item.node).filter((node): node is GraphNode => !!node);
+			const nodes = unique_nodes([
+				...placed.flatMap((item) => item.nodes),
+				...named.flatMap((ref) => graph.named(ref.file, ref.name!))
+			]);
 			// A line no function starts before, a module constant: the line itself.
-			const bare = placed
-				.filter((item) => item.ref.line && !item.node)
-				.map(({ ref }) => ({
-					label: `${ref.file.split('/').pop()}:${ref.line}`,
-					file: ref.file,
-					line: ref.line,
-					href: github(ref.file, ref.line)
-				}));
+			const loose = placed.filter((item) => item.ref.line && item.nodes.length === 0);
+			const bare = loose.map(({ ref }) => ({
+				label: `${ref.file.split('/').pop()}:${ref.line}`,
+				file: ref.file,
+				line: ref.line,
+				href: github(ref.file, ref.line)
+			}));
 			const implementations = unique([...nodes.map((node) => graph.ref(node)), ...bare]);
 			const tests: CodeRef[] = [];
+			const indirectTests: CodeRef[] = [];
 			const callers: CodeRef[] = [];
 			// A constant's readers call nothing for the rule: they are its users,
 			// and their tests are its tests.
-			const readers = placed
-				.filter((item) => item.ref.line && !item.node)
-				.flatMap(({ ref }) => graph.readersOf(ref.file, ref.line, ref.end));
+			const readers = loose.flatMap(({ ref }) => graph.readersOf(ref.file, ref.line, ref.end));
 			callers.push(...readers.map((reader) => graph.ref(reader)));
-			for (const node of [...nodes, ...readers]) {
+			for (const node of nodes) {
 				const users = graph.users(node);
 				tests.push(...users.tests.map((test) => graph.testRef(test)));
+				tests.push(...graph.testsCallingByName(node).map((test) => graph.testRef(test)));
+				indirectTests.push(...users.indirect.map((test) => graph.testRef(test)));
 				callers.push(...users.callers.map((caller) => graph.ref(caller)));
+			}
+			// The tests of what reads the constant go through that reader; a test
+			// that names the constant reads it itself.
+			for (const node of readers) {
+				const users = graph.users(node);
+				indirectTests.push(
+					...[...users.tests, ...users.indirect].map((test) => graph.testRef(test))
+				);
+				callers.push(...users.callers.map((caller) => graph.ref(caller)));
+			}
+			for (const { ref } of loose) {
+				const names = graph
+					.linesOf(ref.file)
+					.slice(ref.line - 1, ref.end)
+					.map((line) => CONSTANT.exec(line)?.[1])
+					.filter((name): name is string => !!name);
+				tests.push(...graph.testsNaming(ref.file, names).map((test) => graph.testRef(test)));
+			}
+			// A whole file the wiki names, `models/entity.py`, without a line or a
+			// name: the tests of its classes and functions reach the rule through it.
+			const wholeFiles = refs.filter(
+				(ref) => !ref.line && !named.some((other) => other.file === ref.file)
+			);
+			for (const node of wholeFiles.flatMap((ref) => graph.topLevel(ref.file))) {
+				const users = graph.users(node);
+				indirectTests.push(
+					...[...users.tests, ...users.indirect].map((test) => graph.testRef(test))
+				);
 			}
 			const files = refs
 				.filter((ref) => !ref.line)
 				.map((ref) => ({ label: ref.file, file: ref.file, line: 0, href: github(ref.file, 0) }));
+			const direct = unique(tests).sort((a, b) => a.label.localeCompare(b.label));
 			traces.set(rule, {
 				implementations: unique([...implementations, ...files]),
-				tests: unique(tests).sort((a, b) => a.label.localeCompare(b.label)),
+				tests: direct,
+				indirectTests: unique(indirectTests)
+					.filter((test) => !direct.some((other) => other.label === test.label))
+					.sort((a, b) => a.label.localeCompare(b.label)),
 				callers: unique(callers).filter(
 					(caller) => !implementations.some((impl) => impl.label === caller.label)
 				)

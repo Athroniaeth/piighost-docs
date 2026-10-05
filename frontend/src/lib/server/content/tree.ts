@@ -291,18 +291,30 @@ class Builder {
 		if (!id || !trace || (trace.implementations.length === 0 && trace.tests.length === 0))
 			return undefined;
 		const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-		// The graph only sees the tests that call a rule's function directly. A
-		// test that goes through the pipeline is not counted, so "0 tests" would
-		// claim a covered rule untested: no count is shown rather than a false 0.
+		const fr = this.context.lang === 'fr';
+		// No "0 tests": the graph sees only the tests that reach a rule through
+		// its own module, so a missing count is no claim the rule is untested.
 		const text = [
-			this.context.lang === 'fr'
+			fr
 				? count(trace.implementations.length, 'emplacement', 'emplacements')
 				: count(trace.implementations.length, 'location', 'locations'),
 			...(trace.tests.length
 				? [
-						this.context.lang === 'fr'
+						fr
 							? count(trace.tests.length, 'test direct', 'tests directs')
 							: count(trace.tests.length, 'direct test', 'direct tests')
+					]
+				: []),
+			...(trace.indirectTests.length
+				? [
+						// After the direct tests, "indirect" alone says which tests.
+						fr
+							? trace.tests.length
+								? count(trace.indirectTests.length, 'indirect', 'indirects')
+								: count(trace.indirectTests.length, 'test indirect', 'tests indirects')
+							: trace.tests.length
+								? `${trace.indirectTests.length} indirect`
+								: count(trace.indirectTests.length, 'indirect test', 'indirect tests')
 					]
 				: [])
 		].join(' · ');
