@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Breadcrumbs, Content, PageActions, PrevNext, SidebarTree, Toc } from '@piighost/ui';
 	import { labels } from '#lib/i18n.js';
+	import CopyPageMenu from '#lib/components/CopyPageMenu.svelte';
 
 	let { data } = $props();
 
@@ -45,6 +46,7 @@
 	>
 		<div class="mb-4 flex flex-wrap items-center justify-between gap-3" data-pagefind-ignore>
 			<Breadcrumbs items={data.page.breadcrumbs} label={t.breadcrumb} />
+			<CopyPageMenu markdownUrl={data.markdownUrl} {lang} />
 		</div>
 		<!-- Below the widths that show the two columns, the section tree and the
 		     page outline fold above the content. -->
@@ -71,7 +73,6 @@
 		</article>
 		<div class="mt-10 border-t pt-6" data-pagefind-ignore>
 			<PageActions
-				markdownUrl={data.markdownUrl}
 				editUrl={data.editUrl}
 				issueUrl={data.issueUrl}
 				labels={{
