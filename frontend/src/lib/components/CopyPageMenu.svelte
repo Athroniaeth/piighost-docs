@@ -69,11 +69,26 @@
 		setTimeout(() => (copied = false), 1500);
 	}
 
+	/** The menu's width, w-[17rem]. */
+	const MENU_WIDTH = 272;
+	/**
+	 * The menu opens under the buttons, flush with their right edge. When the
+	 * buttons sit at the start of the line, on a phone where they wrap under
+	 * the breadcrumb, that edge is too close to the left of the screen: the menu
+	 * is flush with their left edge instead. Decided on the click, before the
+	 * menu shows.
+	 */
+	let alignStart = $state(false);
+	function place(event: MouseEvent) {
+		const frame = (event.currentTarget as HTMLElement).closest('[data-copy-page]');
+		if (frame) alignStart = frame.getBoundingClientRect().right - MENU_WIDTH < 8;
+	}
+
 	const ITEM =
 		'flex items-start gap-2.5 rounded-md px-2.5 py-2 text-popover-foreground outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50';
 </script>
 
-<div class="relative inline-flex rounded-lg border bg-background">
+<div class="relative inline-flex rounded-lg border bg-background" data-copy-page>
 	<button
 		type="button"
 		onclick={copyMarkdown}
@@ -83,13 +98,17 @@
 	</button>
 	<details class="group" {@attach closeOnOutside}>
 		<summary
+			onclick={place}
 			aria-label={t.more}
 			class="inline-flex h-8 cursor-pointer list-none items-center rounded-e-lg border-s px-2 transition-colors outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
 		>
 			<ChevronDown class="size-4 transition-transform group-open:rotate-180" />
 		</summary>
 		<ul
-			class="absolute right-0 z-40 mt-1.5 grid w-[17rem] gap-0.5 rounded-lg border bg-popover p-1 shadow-lg"
+			class={[
+				'absolute z-40 mt-1.5 grid w-[17rem] max-w-[calc(100vw-1rem)] gap-0.5 rounded-lg border bg-popover p-1 shadow-lg',
+				alignStart ? 'left-0' : 'right-0'
+			]}
 		>
 			<li>
 				<!-- A file, not a page: rel="external" makes the router load it. -->
