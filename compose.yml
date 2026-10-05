@@ -13,6 +13,7 @@ x-build: &build
   args:
     CONTENT: piighost
     PUBLIC_CHAT_URL: ${PUBLIC_CHAT_URL:-}
+    PUBLIC_OPENPANEL_CLIENT_ID: ${PUBLIC_OPENPANEL_CLIENT_ID:-41a2d535-a35a-4c3e-82ed-71697bde0fa9}
 
 services:
   web:

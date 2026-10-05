@@ -5,6 +5,7 @@
 	import FileText from '@lucide/svelte/icons/file-text';
 	import MessageSquare from '@lucide/svelte/icons/message-square';
 	import { closeOnOutside } from '@piighost/ui';
+	import { track } from '#lib/analytics.js';
 
 	/**
 	 * Copy the page as Markdown for an assistant, the main action, and a menu to
@@ -64,6 +65,7 @@
 		const response = await fetch(markdownUrl);
 		await navigator.clipboard.writeText(await response.text());
 		copied = true;
+		track({ name: 'page_copied', props: { space: markdownUrl.split('/')[2] ?? '', lang } });
 		setTimeout(() => (copied = false), 1500);
 	}
 
@@ -101,7 +103,14 @@
 			</li>
 			{#each assistants as assistant (assistant.name)}
 				<li>
-					<a href={assistant.href} target="_blank" rel="noreferrer" class={ITEM}>
+					<a
+						href={assistant.href}
+						target="_blank"
+						rel="noreferrer"
+						class={ITEM}
+						onclick={() =>
+							track({ name: 'assistant_opened', props: { assistant: assistant.name, lang } })}
+					>
 						<MessageSquare class="mt-0.5 size-4 shrink-0" />
 						<span class="grid">
 							<span class="text-sm font-medium">{t.open} {assistant.name}</span>

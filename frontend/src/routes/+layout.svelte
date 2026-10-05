@@ -12,7 +12,9 @@
 	} from '@piighost/ui';
 	import Search from '#lib/components/Search.svelte';
 	import { labels } from '#lib/i18n.js';
-	import { PUBLIC_CHAT_URL } from '$app/env/public';
+	import { PUBLIC_CHAT_URL, PUBLIC_OPENPANEL_CLIENT_ID } from '$app/env/public';
+	import { afterNavigate } from '$app/navigation';
+	import { initAnalytics, track } from '#lib/analytics.js';
 
 	let { children } = $props();
 
@@ -20,6 +22,13 @@
 	const chatUrl = PUBLIC_CHAT_URL;
 
 	const lang = $derived(page.url.pathname.startsWith('/en') ? 'en' : 'fr');
+
+	// One page view per page reached, the first load included. The client id
+	// is baked in at build time; without one, nothing is sent.
+	afterNavigate(() => {
+		initAnalytics(PUBLIC_OPENPANEL_CLIENT_ID);
+		track({ name: 'page_view', props: { space: page.url.pathname.split('/')[2] ?? 'home', lang } });
+	});
 	const t = $derived(labels(lang));
 	const space = $derived(page.url.pathname.split('/')[2]);
 	const alternate = $derived((page.data as { alternate?: string }).alternate);

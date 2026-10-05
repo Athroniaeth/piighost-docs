@@ -10,5 +10,12 @@ export const variables = defineEnvVars({
 		description:
 			'The server of the documentation chatbot, embedded as its copilot widget. Unset, no chatbot.',
 		schema: (value) => value?.replace(/\/+$/, '') || undefined
+	},
+	PUBLIC_OPENPANEL_CLIENT_ID: {
+		public: true,
+		static: true,
+		description:
+			'The OpenPanel client of docs.piighost.dev, in the organisation "piighost". Unset, no analytics.',
+		schema: (value) => value || undefined
 	}
 });

@@ -57,6 +57,9 @@ COPY --from=graph /graph/graph.json .graph/graph.json
 # The chatbot's server, baked into the pages and their policy. Empty, no chatbot.
 ARG PUBLIC_CHAT_URL=
 ENV PUBLIC_CHAT_URL=$PUBLIC_CHAT_URL
+# The OpenPanel client of the docs: public, it ships in every page anyway.
+ARG PUBLIC_OPENPANEL_CLIENT_ID=41a2d535-a35a-4c3e-82ed-71697bde0fa9
+ENV PUBLIC_OPENPANEL_CLIENT_ID=$PUBLIC_OPENPANEL_CLIENT_ID
 RUN pnpm build
 
 # Unprivileged nginx: runs as the nginx user and listens on 8080.
