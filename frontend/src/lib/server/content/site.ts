@@ -36,6 +36,8 @@ export interface Page {
 	title: string;
 	description: string;
 	source: string;
+	/** The page as plain Markdown, for an assistant: index.md, llms-full.txt, "Copy page". */
+	markdown: string;
 	nodes: ContentNode[];
 	toc: TocEntry[];
 	text: string;
@@ -402,6 +404,17 @@ async function load(): Promise<Site> {
 			lang: draft.lang,
 			problems: pageProblems
 		});
+		const absolute = (url: string) =>
+			url.startsWith('#')
+				? `${SITE_URL}${draft.route}${url}`
+				: url.startsWith('/')
+					? `${SITE_URL}${url}`
+					: url;
+		const markdown = exportMarkdown(draft.source, {
+			lang: draft.lang,
+			link: (href) => absolute(resolveLink(href)),
+			asset: (src) => absolute(resolveAsset(src.split('#')[0]))
+		});
 		for (const problem of new Set(pageProblems)) problems.push(`${draft.repoPath}: ${problem}`);
 		pages.set(draft.route, {
 			space: draft.space,
@@ -412,6 +425,7 @@ async function load(): Promise<Site> {
 			title: titleOf(draft),
 			description: descriptionOf(draft),
 			source: draft.source,
+			markdown,
 			nodes: built.nodes,
 			toc: built.toc,
 			text: built.text,

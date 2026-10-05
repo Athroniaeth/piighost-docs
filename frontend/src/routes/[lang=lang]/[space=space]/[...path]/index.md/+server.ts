@@ -4,7 +4,7 @@ import type { EntryGenerator, RequestHandler } from './$types';
 
 export const prerender = true;
 
-/** The page as its author wrote it, for an assistant or a reader who wants the source. */
+/** The page as plain Markdown (export.ts), for an assistant or a reader who wants the text. */
 export const entries: EntryGenerator = async () => {
 	const site = await getSite();
 	return [...site.pages.values()].map((page) => ({
@@ -20,5 +20,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		`/${params.lang}/${params.space}/${params.path ? `${params.path}/` : ''}`
 	);
 	if (!page) error(404, 'Page not found');
-	return new Response(page.source, { headers: { 'content-type': 'text/markdown; charset=utf-8' } });
+	return new Response(page.markdown, {
+		headers: { 'content-type': 'text/markdown; charset=utf-8' }
+	});
 };
