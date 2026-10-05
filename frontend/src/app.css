@@ -241,7 +241,8 @@
 	white-space: nowrap;
 }
 
-.prose-piighost :is(h1, h2, h3, h4) code {
+.prose-piighost :is(h1, h2, h3, h4) code,
+.prose-piighost :is(h1, h2, h3, h4) code.nowrap {
 	white-space: normal;
 	overflow-wrap: anywhere;
 }
