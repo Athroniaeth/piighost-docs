@@ -1,11 +1,11 @@
-import { idCards, SITE_URL } from '#lib/server/content/idcard.js';
+import { idEntry, idList, idRoute, SITE_URL } from '#lib/server/content/idcard.js';
 import { getSite } from '#lib/server/content/site.js';
 
 export const prerender = true;
 
 /**
  * The index an assistant reads first (llmstxt.org): every page with its
- * description, grouped by space, then every identifier card, each pointing at
+ * description, grouped by space, then every identifier card in each language, each pointing at
  * its Markdown source.
  */
 export async function GET() {
@@ -32,15 +32,17 @@ export async function GET() {
 		section('Guide technique (français)', (route) => route.startsWith('/fr/guide/')),
 		section('Domain documentation (English)', (route) => route.startsWith('/en/domain/')),
 		section('Documentation métier (français)', (route) => route.startsWith('/fr/domain/')),
-		[
-			'## Identifier cards',
-			'',
-			...idCards(site.ids).map(
-				({ en }) =>
-					`- [${en.id}](${SITE_URL}/ids/${en.id}/index.md): ${en.summary.replace(/\s+/g, ' ').slice(0, 160)}`
-			),
-			''
-		].join('\n')
+		...(['en', 'fr'] as const).map((lang) =>
+			[
+				lang === 'en' ? '## Identifier cards (English)' : '## Fiches des identifiants (français)',
+				'',
+				...idList(site.ids).map((id) => {
+					const entry = idEntry(site.ids, id, lang)!;
+					return `- [${id}](${SITE_URL}${idRoute(lang, id)}index.md): ${entry.summary.replace(/\s+/g, ' ').slice(0, 160)}`;
+				}),
+				''
+			].join('\n')
+		)
 	].join('\n');
 	return new Response(body, { headers: { 'content-type': 'text/plain; charset=utf-8' } });
 }

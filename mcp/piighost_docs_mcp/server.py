@@ -2,7 +2,7 @@
 
 It reads what the site serves, not its sources: the Markdown export of every
 page (`<page>/index.md`, includes expanded) and the data of every identifier
-card (`ids/<ID>/__data.json`). The index is rebuilt when the site is, so a
+card (`<lang>/ids/<ID>/__data.json`). The index is rebuilt when the site is, so a
 rebuild of the preview is seen on the next call.
 """
 
@@ -292,16 +292,20 @@ def _unflatten(data: list[Any]) -> Any:
 
 
 @mcp.tool()
-def get_id(identifier: str) -> dict[str, Any]:
+def get_id(identifier: str, lang: str = "en") -> dict[str, Any]:
     """Look up an identifier of the domain documentation: a rule (BR-MSG-05), a need (DPO-9, DEV-10,
     OPS-8, USER-6), a design decision (DEC-13), an acceptance test (AT-DEV-10-1) or a gap
     (ECART-09).
 
+    lang: "fr" or "en", the language of the definition returned, English by default.
+
     Returns what it says, the page that defines it and, for a rule, where it lives
-    in the code, which tests call it and which code uses it.
+    in the code, which tests call it directly or indirectly and which code uses it.
     """
     name = identifier.strip().upper()
-    card = SITE_DIR / "ids" / name / "__data.json"
+    if lang not in LANGUAGES:
+        raise ValueError(f"lang is 'fr' or 'en', not {lang!r}")
+    card = SITE_DIR / lang / "ids" / name / "__data.json"
     if not card.is_file():
         raise ValueError(
             f"no identifier {name!r}; search_docs finds the ones a page names"

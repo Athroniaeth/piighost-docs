@@ -451,7 +451,7 @@ class Builder {
 		return {
 			type: 'element',
 			tag: 'a',
-			attrs: { href: `/ids/${id}/`, class: 'trace-link' },
+			attrs: { href: `/${this.context.lang}/ids/${id}/`, class: 'trace-link' },
 			children: [{ type: 'text', value: text }]
 		};
 	}
