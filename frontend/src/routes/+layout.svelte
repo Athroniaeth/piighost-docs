@@ -35,7 +35,7 @@
 
 	/** The ecosystem menu every piighost header shares, without the philosophy and the registry. */
 	const links = $derived(
-		ecosystemLinks('docs', lang, ['philosophy', 'hub']).map((link) =>
+		ecosystemLinks('docs', lang, ['philosophy', 'catalog']).map((link) =>
 			// The docs link stays on this site, whatever host serves it.
 			link.label === 'Docs' ? { ...link, href: `/${lang}/` } : link
 		)
@@ -140,7 +140,7 @@
 			title: t.ecosystem,
 			links: [
 				{ href: 'https://piighost.dev', label: 'piighost.dev', external: true },
-				{ href: 'https://hub.piighost.dev', label: 'hub.piighost.dev', external: true }
+				{ href: 'https://catalog.piighost.dev', label: 'catalog.piighost.dev', external: true }
 			]
 		},
 		{
