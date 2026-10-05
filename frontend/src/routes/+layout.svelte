@@ -14,7 +14,9 @@
 	import { labels } from '#lib/i18n.js';
 	import { PUBLIC_CHAT_URL, PUBLIC_OPENPANEL_CLIENT_ID } from '$app/env/public';
 	import { afterNavigate } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import { initAnalytics, track } from '#lib/analytics.js';
+	import { watchScrollers } from '#lib/scroll-cues.js';
 
 	let { children } = $props();
 
@@ -23,9 +25,18 @@
 
 	const lang = $derived(page.url.pathname.startsWith('/en') ? 'en' : 'fr');
 
+	// The scrolling tables of each page show which side they scroll to.
+	let scrollers: ReturnType<typeof watchScrollers> | undefined;
+	onMount(() => {
+		scrollers = watchScrollers();
+		scrollers.refresh();
+		return () => scrollers?.stop();
+	});
+
 	// One page view per page reached, the first load included. The client id
 	// is baked in at build time; without one, nothing is sent.
 	afterNavigate(() => {
+		scrollers?.refresh();
 		initAnalytics(PUBLIC_OPENPANEL_CLIENT_ID);
 		track({ name: 'page_view', props: { space: page.url.pathname.split('/')[2] ?? 'home', lang } });
 	});

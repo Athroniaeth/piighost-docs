@@ -89,6 +89,11 @@ function directives(source: string) {
 				} else if (directive.name === 'caption') {
 					data.hName = 'p';
 					data.hProperties = { className: ['figure-caption'] };
+					// The caption's paragraph holds its text: a paragraph inside a
+					// paragraph is closed by the browser, which left the caption empty.
+					const [only, ...rest] = directive.children;
+					if (only?.type === 'paragraph' && rest.length === 0)
+						directive.children = only.children as never;
 				} else {
 					data.hName = `pg-${directive.name}`;
 					data.hProperties = { label: label ?? '' };

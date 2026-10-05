@@ -16,9 +16,11 @@ import type { ContentNode, TocEntry, TreeNode, NavLink } from '@piighost/ui';
 import { CONTENT_ROOT, LANGUAGES, REPOSITORY, BRANCH, type Language } from './config';
 import { expandIncludes, preprocess, readAbbreviations } from './preprocess';
 import { parseMarkdown } from './markdown';
-import { buildTree } from './tree';
+import { buildTree, typeset } from './tree';
 import { collectDefinitions, anchorOf, NEED, type IdIndex } from './ids';
 import { renderDiagram, closeDiagrams } from './diagrams';
+import { exportMarkdown } from './export';
+import { SITE_URL } from './idcard';
 import { traceRules } from './traceability';
 
 export type Space = 'guide' | 'domain';
@@ -104,7 +106,12 @@ function routePart(rel: string): string {
 	return (stem.endsWith('/index') ? stem.slice(0, -'/index'.length) : stem) + '/';
 }
 
+/** A page's title as the reader sees it, French spacing included. */
 function titleOf(draft: Draft): string {
+	return typeset(rawTitleOf(draft), draft.lang);
+}
+
+function rawTitleOf(draft: Draft): string {
 	// A wiki folder index is a generated list headed "Fichiers": name it after its section.
 	if (draft.space === 'domain' && draft.repoPath.endsWith('index.md')) {
 		const folder = draft.repoPath.split('/').slice(-2, -1)[0];
@@ -141,8 +148,9 @@ function guideNav(lang: Language, routes: Map<string, string>): TreeNode[] {
 			const href = routes.get(`docs/${lang}/${entry}`);
 			return href ? { label: entry, href } : undefined;
 		}
-		const [label, value] = Object.entries(entry as Record<string, unknown>)[0] ?? [];
-		if (label === undefined) return undefined;
+		const [written, value] = Object.entries(entry as Record<string, unknown>)[0] ?? [];
+		if (written === undefined) return undefined;
+		const label = typeset(written, lang);
 		if (typeof value === 'string') {
 			const href = routes.get(`docs/${lang}/${value}`);
 			return href ? { label, href } : undefined;
@@ -176,12 +184,12 @@ function wikiNav(lang: Language, drafts: Draft[]): TreeNode[] {
 	return [...top, ...sections];
 }
 
-/** The headings of the sections that define needs, one per profile. */
-function profileHeadings(tree: MdastRoot): Set<string> {
+/** The headings of the sections that define needs, one per profile, as the outline shows them. */
+function profileHeadings(tree: MdastRoot, lang: Language): Set<string> {
 	const found = new Set<string>();
 	let section = '';
 	for (const node of tree.children) {
-		if (node.type === 'heading' && node.depth === 2) section = toString(node).trim();
+		if (node.type === 'heading' && node.depth === 2) section = typeset(toString(node).trim(), lang);
 		else if (node.type === 'paragraph' && section && NEED.test(toString(node).trim()))
 			found.add(section);
 	}
@@ -193,7 +201,7 @@ function profileHeadings(tree: MdastRoot): Set<string> {
  * page, then one entry per profile leads to that profile's section.
  */
 function listProfiles(tree: TreeNode[], page: Page, draft: Draft): TreeNode[] {
-	const profiles = profileHeadings(draft.mdast);
+	const profiles = profileHeadings(draft.mdast, draft.lang);
 	const sections = page.toc.filter((entry) => entry.depth === 2 && profiles.has(entry.text));
 	if (sections.length === 0) return tree;
 	return tree.map((node) =>
@@ -312,6 +320,7 @@ async function load(): Promise<Site> {
 				problems.push(`${entry.id} defined twice: ${index.get(entry.id)?.page} and ${draft.route}`);
 				continue;
 			}
+			entry.summary = typeset(entry.summary, draft.lang);
 			index.set(entry.id, entry);
 			anchors.set(entry.id, anchorOf(entry.id));
 		}

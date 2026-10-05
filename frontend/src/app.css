@@ -2,12 +2,69 @@
    documentation needs. Never an inline style: the policy is style-src 'self'. */
 @import '@piighost/ui/styles.css';
 
-/* Tables wider than the column scroll on their own, never the page. */
-.prose-piighost .wide-table > table,
-.prose-piighost table.table-scroll {
-	display: block;
+/* Tables wider than the column scroll inside their region (tree.ts), never
+   the page. The region takes the keyboard focus, and its frame shades each
+   side it can still scroll to (scroll-cues.ts). */
+.prose-piighost .table-wrap {
+	position: relative;
+	margin-block: 1.5rem;
+}
+
+.prose-piighost .table-scroll {
 	max-width: 100%;
 	overflow-x: auto;
+	border-radius: var(--radius);
+}
+
+/* The region scrolls, not the table: the shared styles make every table its
+   own scroller, which would leave the region nothing to scroll. The table
+   takes the column's width and wraps its cells, down to their longest word. */
+.prose-piighost .table-scroll > table {
+	display: table;
+	width: auto;
+	max-width: none;
+	overflow: visible;
+	margin-block: 0;
+}
+
+.prose-piighost .table-scroll:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 2px;
+}
+
+.prose-piighost .table-wrap::before,
+.prose-piighost .table-wrap::after {
+	content: '';
+	position: absolute;
+	z-index: 1;
+	inset-block: 0;
+	width: 2.5rem;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 150ms;
+}
+
+.prose-piighost .table-wrap::before {
+	inset-inline-start: 0;
+	background: linear-gradient(
+		to right,
+		color-mix(in oklch, var(--foreground) 22%, transparent),
+		transparent
+	);
+}
+
+.prose-piighost .table-wrap::after {
+	inset-inline-end: 0;
+	background: linear-gradient(
+		to left,
+		color-mix(in oklch, var(--foreground) 22%, transparent),
+		transparent
+	);
+}
+
+.prose-piighost .table-wrap[data-scroll-start]::before,
+.prose-piighost .table-wrap[data-scroll-end]::after {
+	opacity: 1;
 }
 
 /* Cells with room to breathe. A column never narrows below a few words, the
@@ -27,8 +84,7 @@
 /* A table that scrolls clips whatever leaves it, so the card of an identifier
    in a table is fixed to the window instead. The layout places it under its
    link, through the CSS object model, which the style policy allows. */
-.prose-piighost .wide-table > table [role='tooltip'],
-.prose-piighost table.table-scroll [role='tooltip'] {
+.prose-piighost .table-scroll [role='tooltip'] {
 	position: fixed;
 }
 
@@ -41,16 +97,46 @@
 
 /* A diagram shows at its own size, never larger: the SVG carries the size of
    its drawing, and the column only shrinks it. A tall one stops at a screen's
-   height. On a phone it keeps a readable width and scrolls sideways inside its
-   figure, never the page. */
-.prose-piighost figure:has(> img.diagram-light) {
-	overflow-x: auto;
+   height. Each image is a link to the drawing at full size, which a phone
+   shrinks below legibility: a wide one also says so under it. */
+.prose-piighost figure.diagram {
+	margin-block: 1.5rem;
 }
 
-.prose-piighost figure > :is(img.diagram-light, img.diagram-dark) {
+.prose-piighost figure.diagram > a.diagram-open {
+	cursor: zoom-in;
+	border-radius: var(--radius);
+}
+
+.prose-piighost figure.diagram > a.diagram-open:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 2px;
+}
+
+.prose-piighost figure.diagram img {
+	display: block;
+	margin-inline: auto;
 	width: auto;
-	max-width: max(100%, 36rem);
+	height: auto;
+	max-width: 100%;
 	max-height: 50rem;
+}
+
+.prose-piighost figure.diagram > figcaption {
+	margin-block-start: 0.5rem;
+}
+
+.prose-piighost .diagram-hint {
+	display: none;
+	margin-block: 0.5rem 0;
+	text-align: center;
+	font-size: 0.875rem;
+}
+
+@media (width < 64rem) {
+	.prose-piighost .diagram-wide .diagram-hint {
+		display: block;
+	}
 }
 
 /* The glossary: each term stands out, its definition sits under it, indented. */
@@ -132,7 +218,8 @@
 	font-size: 0.75rem;
 	color: var(--muted-foreground);
 	text-decoration: none;
-	white-space: nowrap;
+	/* Its counts wrap on a phone rather than widen the page. */
+	max-width: 100%;
 }
 
 .prose-piighost a.trace-link:hover {
@@ -147,9 +234,16 @@
 	hyphens: manual;
 }
 
-/* A short inline code stays on one line (tree.ts marks it). */
+/* A short inline code stays on one line (tree.ts marks it). In a heading,
+   whose letters are larger, a class name is wider than a phone: it breaks
+   rather than widen the page. */
 .prose-piighost code.nowrap {
 	white-space: nowrap;
+}
+
+.prose-piighost :is(h1, h2, h3, h4) code {
+	white-space: normal;
+	overflow-wrap: anywhere;
 }
 
 /* List numbers in the body font, without a gap before their period. */
@@ -169,10 +263,10 @@ details.group\/section:not([open]) > summary > svg {
 	display: none;
 }
 
-/* On a phone a wide diagram fits the column whole rather than being cut
-   mid-node: the reader zooms in, as on any picture. */
-@media (width < 40rem) {
-	.prose-piighost figure > :is(img.diagram-light, img.diagram-dark) {
-		max-width: 100%;
+/* On a phone a line of code would run under the copy button, which sits over
+   the block's top right corner: the code starts below it. */
+@media (width < 48rem) {
+	.prose-piighost .code-block {
+		padding-top: 2.75rem;
 	}
 }

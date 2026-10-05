@@ -104,13 +104,23 @@ async function render(code: string, mode: keyof typeof THEMES): Promise<string> 
 	return new TextDecoder().decode(data);
 }
 
+/** A diagram's two renders and the size of its drawing. */
+export interface Diagram {
+	light: string;
+	dark: string;
+	width: number;
+	height: number;
+}
+
 /** The URLs of a diagram's two renders, rendering them when they are not cached. */
-export async function renderDiagram(code: string): Promise<{ light: string; dark: string }> {
+export async function renderDiagram(code: string): Promise<Diagram> {
 	const hash = createHash('sha256').update(RENDER_VERSION).update(code).digest('hex').slice(0, 16);
 	mkdirSync(DIAGRAMS_DIR, { recursive: true });
-	const urls = {
+	const diagram = {
 		light: `${DIAGRAMS_URL}/${hash}-light.svg`,
-		dark: `${DIAGRAMS_URL}/${hash}-dark.svg`
+		dark: `${DIAGRAMS_URL}/${hash}-dark.svg`,
+		width: 0,
+		height: 0
 	};
 	for (const mode of ['light', 'dark'] as const) {
 		const file = join(DIAGRAMS_DIR, `${hash}-${mode}.svg`);
@@ -118,6 +128,8 @@ export async function renderDiagram(code: string): Promise<{ light: string; dark
 		const svg = cached ?? (await render(code, mode));
 		const sized = withIntrinsicSize(svg);
 		if (sized !== cached) writeFileSync(file, sized);
+		const size = /^<svg width="(\d+)" height="(\d+)"/.exec(sized);
+		if (size) [diagram.width, diagram.height] = [Number(size[1]), Number(size[2])];
 	}
-	return urls;
+	return diagram;
 }

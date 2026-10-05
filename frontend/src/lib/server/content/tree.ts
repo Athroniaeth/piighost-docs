@@ -22,8 +22,10 @@ export interface TreeContext {
 	resolveLink: (href: string) => string;
 	/** Rewrite an image source, relative to the page's file. */
 	resolveAsset: (src: string) => string;
-	/** Render a Mermaid diagram, returning the URLs of its two themes. */
-	renderDiagram: (code: string) => Promise<{ light: string; dark: string }>;
+	/** Render a Mermaid diagram, returning the URLs of its two themes and its size. */
+	renderDiagram: (
+		code: string
+	) => Promise<{ light: string; dark: string; width: number; height: number }>;
 	ids: IdIndex;
 	abbreviations: Map<string, string>;
 	/** The id this page defines with each block, read by its first words. */
@@ -34,6 +36,18 @@ export interface TreeContext {
 	lang: 'fr' | 'en';
 	problems: string[];
 }
+
+/**
+ * French typography: the space before a high punctuation mark never breaks,
+ * so a line never starts with ":" and the gap stays narrow (U+202F). Applied
+ * to what the reader sees, never to what an id is made from.
+ */
+export function typeset(text: string, lang: 'fr' | 'en'): string {
+	return lang === 'fr' ? text.replace(/ ([:;!?»])/g, '\u202f$1').replace(/« /g, '«\u202f') : text;
+}
+
+/** A diagram wider than this is shrunk below half its size on a phone: it gets a link to its full size. */
+const WIDE_DIAGRAM = 600;
 
 /**
  * Python-Markdown's toc slugify, which Zensical uses: accents dropped by NFKD,
@@ -114,12 +128,8 @@ class Builder {
 
 	/** Text, split around identifiers and abbreviations. */
 	text(raw: string, linkify: boolean): ContentNode[] {
-		// French typography: the space before a high punctuation mark never
-		// breaks, so a line never starts with ":" and the gap stays narrow.
-		const value =
-			this.context.lang === 'fr' && this.codeDepth === 0
-				? raw.replace(/ ([:;!?»])/g, '\u202f$1').replace(/« /g, '«\u202f')
-				: raw;
+		// French typography, outside code, whose text stays as written.
+		const value = this.codeDepth === 0 ? typeset(raw, this.context.lang) : raw;
 		if (!linkify) return [{ type: 'text', value }];
 		const out: ContentNode[] = [];
 		let last = 0;
@@ -161,8 +171,92 @@ class Builder {
 		linkify: boolean
 	): Promise<ContentNode[]> {
 		const out: ContentNode[] = [];
-		for (const node of nodes) out.push(...(await this.node(node, linkify)));
+		for (let index = 0; index < nodes.length; index++) {
+			const node = nodes[index];
+			const mermaid = mermaidOf(node);
+			if (mermaid === undefined) {
+				out.push(...(await this.node(node, linkify)));
+				continue;
+			}
+			// The caption written under a diagram is its figure's caption and,
+			// unless the diagram names itself, the text of its image.
+			let next = index + 1;
+			while (next < nodes.length && isBlank(nodes[next])) next++;
+			const caption = isCaption(nodes[next]) ? (nodes[next] as Element) : undefined;
+			if (caption) index = next;
+			out.push(await this.diagram(mermaid, caption, linkify));
+		}
 		return out;
+	}
+
+	/** A Mermaid diagram as a figure, each theme's image a link to its full size. */
+	async diagram(
+		code: string,
+		caption: Element | undefined,
+		linkify: boolean
+	): Promise<ContentNode> {
+		const { light, dark, width, height } = await this.context.renderDiagram(code);
+		const fr = this.context.lang === 'fr';
+		const named =
+			/^\s*accTitle\s*:\s*(.+)$/m.exec(code)?.[1] ??
+			/^---\s*\n(?:.*\n)*?\s*title\s*:\s*(.+)\n(?:.*\n)*?---/m.exec(code)?.[1];
+		const alt =
+			named?.trim() ||
+			(caption ? toString(caption).replace(/\s+/g, ' ').trim() : '') ||
+			(fr ? 'Schéma' : 'Diagram');
+		const wide = width > WIDE_DIAGRAM;
+		// The light render on both themes: opened alone, an SVG shows on the
+		// browser's white page, where the dark render's light text is lost.
+		const image = (theme: 'light' | 'dark', src: string): ContentNode => ({
+			type: 'element',
+			tag: 'a',
+			attrs: { href: light, target: '_blank', class: `diagram-${theme} diagram-open` },
+			children: [
+				{
+					type: 'element',
+					tag: 'img',
+					attrs: {
+						src,
+						alt: typeset(alt, this.context.lang),
+						...(width ? { width, height } : {}),
+						loading: 'lazy'
+					}
+				}
+			]
+		});
+		const children: ContentNode[] = [image('light', light), image('dark', dark)];
+		if (caption)
+			children.push({
+				type: 'element',
+				tag: 'figcaption',
+				attrs: { class: 'figure-caption' },
+				children: await this.children(captionContent(caption), linkify)
+			});
+		if (wide)
+			children.push({
+				type: 'element',
+				tag: 'p',
+				attrs: { class: 'diagram-hint' },
+				children: [
+					{
+						type: 'element',
+						tag: 'a',
+						attrs: { href: light, target: '_blank' },
+						children: [
+							{
+								type: 'text',
+								value: fr ? 'Ouvrir le schéma en taille réelle ↗' : 'Open the diagram full size ↗'
+							}
+						]
+					}
+				]
+			});
+		return {
+			type: 'element',
+			tag: 'figure',
+			attrs: { class: wide ? 'diagram diagram-wide' : 'diagram' },
+			children
+		};
 	}
 
 	async node(node: RootContent | ElementContent, linkify: boolean): Promise<ContentNode[]> {
@@ -174,7 +268,7 @@ class Builder {
 
 		if (tag === 'pg-admonition') {
 			const kind = String(props.kind ?? 'note') as 'note' | 'tip' | 'warning' | 'danger';
-			const title = String(props.title ?? '') || undefined;
+			const title = typeset(String(props.title ?? ''), this.context.lang) || undefined;
 			const folding = String(props.collapsible ?? '');
 			const collapsible = folding === 'open' || folding === 'closed' ? folding : undefined;
 			return [
@@ -194,7 +288,13 @@ class Builder {
 			const panels: ContentNode[][] = [];
 			for (const tab of tabs) panels.push(await this.children(tab.children, linkify));
 			return [
-				{ type: 'tabs', labels: tabs.map((tab) => String(tab.properties?.label ?? '')), panels }
+				{
+					type: 'tabs',
+					labels: tabs.map((tab) =>
+						typeset(String(tab.properties?.label ?? ''), this.context.lang)
+					),
+					panels
+				}
 			];
 		}
 		if (tag === 'pg-cards') {
@@ -204,7 +304,7 @@ class Builder {
 			const built = [];
 			for (const card of cards) {
 				built.push({
-					title: String(card.properties?.label ?? ''),
+					title: typeset(String(card.properties?.label ?? ''), this.context.lang),
 					children: await this.children(card.children, linkify)
 				});
 			}
@@ -230,11 +330,6 @@ class Builder {
 			const language = classes
 				.find((name) => name.startsWith('language-'))
 				?.slice('language-'.length);
-			if (language === 'mermaid') {
-				const { light, dark } = await this.context.renderDiagram(text);
-				const alt = this.context.lang === 'fr' ? 'Schéma' : 'Diagram';
-				return [{ type: 'diagram', light, dark, alt }];
-			}
 			return [{ type: 'code', code: text, tokens: await highlight(text, language) }];
 		}
 
@@ -266,12 +361,13 @@ class Builder {
 			const id = definition ?? this.slugger.slug(text);
 			attrs.id = id;
 			if (tag === 'h1' && !this.title) this.title = text;
-			if (tag === 'h2' || tag === 'h3') this.toc.push({ id, text, depth: tag === 'h2' ? 2 : 3 });
+			// The id is made from the text as written, the outline shows it typeset.
+			if (tag === 'h2' || tag === 'h3')
+				this.toc.push({ id, text: typeset(text, this.context.lang), depth: tag === 'h2' ? 2 : 3 });
 		} else if (BLOCKS.has(tag)) {
 			const definition = this.definitionFor(toString(node));
 			if (definition && attrs.id === undefined) attrs.id = definition;
 		}
-		if (tag === 'table') attrs.class = [attrs.class, 'table-scroll'].filter(Boolean).join(' ');
 
 		// Code, links and abbreviations already set are never re-read for identifiers.
 		const keepLinking = linkify && tag !== 'code' && tag !== 'a' && tag !== 'abbr';
@@ -281,7 +377,41 @@ class Builder {
 		const traced =
 			tag === 'p' && typeof attrs.id === 'string' ? this.traceLink(String(attrs.id)) : undefined;
 		if (traced) children.push({ type: 'text', value: ' ' }, traced);
-		return [{ type: 'element', tag, attrs, children }];
+		const element: ContentNode = { type: 'element', tag, attrs, children };
+		return tag === 'table' ? [this.scroller(node, element)] : [element];
+	}
+
+	/**
+	 * A table in a region that scrolls on its own, never the page. The region
+	 * takes the keyboard focus, so the arrows scroll it, and is named after the
+	 * table's first headers; the layout marks the side it can scroll to.
+	 */
+	scroller(table: Element, built: ContentNode): ContentNode {
+		const headers: string[] = [];
+		visitHeaders(table, headers);
+		const fr = this.context.lang === 'fr';
+		const named = headers.slice(0, 3).join(', ') + (headers.length > 3 ? ', …' : '');
+		const label = fr
+			? `Tableau${named ? ` : ${named}` : ''}, défilement horizontal`
+			: `Table${named ? `: ${named}` : ''}, scrolls horizontally`;
+		return {
+			type: 'element',
+			tag: 'div',
+			attrs: { class: 'table-wrap' },
+			children: [
+				{
+					type: 'element',
+					tag: 'div',
+					attrs: {
+						class: 'table-scroll',
+						role: 'region',
+						tabindex: 0,
+						'aria-label': typeset(label, this.context.lang)
+					},
+					children: [built]
+				}
+			]
+		};
 	}
 
 	/** After a rule's definition, a link to what implements and tests it. */
@@ -344,6 +474,46 @@ class Builder {
 }
 
 const ID_PATTERN_AT_START = new RegExp(`^${ID_PATTERN.source}`);
+
+/** The code of a Mermaid block, or undefined for anything else. */
+function mermaidOf(node: RootContent | ElementContent): string | undefined {
+	if (node.type !== 'element' || node.tagName !== 'pre') return undefined;
+	const code = node.children.find(
+		(child): child is Element => child.type === 'element' && child.tagName === 'code'
+	);
+	const classes = (code?.properties?.className as string[] | undefined) ?? [];
+	return classes.includes('language-mermaid')
+		? toString(code ?? node).replace(/\n$/, '')
+		: undefined;
+}
+
+const isBlank = (node: RootContent | ElementContent | undefined) =>
+	node?.type === 'text' && node.value.trim() === '';
+
+/** The `{ .figure-caption }` paragraph markdown.ts makes. */
+function isCaption(node: RootContent | ElementContent | undefined): boolean {
+	if (node?.type !== 'element' || node.tagName !== 'p') return false;
+	const classes = node.properties?.className;
+	return Array.isArray(classes) && classes.includes('figure-caption');
+}
+
+/** A caption's text, without the emphasis the source writes it in. */
+function captionContent(caption: Element): ElementContent[] {
+	const inner = caption.children.filter((child) => !isBlank(child));
+	const [only] = inner;
+	return inner.length === 1 && only.type === 'element' && only.tagName === 'em'
+		? only.children
+		: caption.children;
+}
+
+/** The text of a table's header cells, in order. */
+function visitHeaders(node: Element, out: string[]) {
+	for (const child of node.children) {
+		if (child.type !== 'element') continue;
+		if (child.tagName === 'th') out.push(toString(child).replace(/\s+/g, ' ').trim());
+		else if (child.tagName !== 'tbody') visitHeaders(child, out);
+	}
+}
 
 /** Give every entity chip its hue: placeholders by category, values from the nearest placeholder. */
 function colourEntities(nodes: ContentNode[]) {
