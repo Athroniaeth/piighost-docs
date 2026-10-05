@@ -70,7 +70,7 @@
 </script>
 
 <svelte:head>
-	<title>{t.homeTitle}</title>
+	<title>{t.homeTitle} · piighost</title>
 	<meta name="description" content={t.homeLead} />
 	<link rel="canonical" href="https://docs.piighost.dev/{lang}/" />
 	<link rel="alternate" hreflang="fr" href="https://docs.piighost.dev/fr/" />

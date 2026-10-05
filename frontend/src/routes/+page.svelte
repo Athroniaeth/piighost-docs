@@ -3,4 +3,4 @@
 </script>
 
 <!-- The root leads to the reader's language, French without script. -->
-<LangRedirect path="/" fallback="fr" title="piighost documentation" />
+<LangRedirect path="/" fallback="fr" title="Documentation · piighost" />
