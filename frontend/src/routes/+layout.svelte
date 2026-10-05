@@ -1,7 +1,15 @@
 <script lang="ts">
 	import '../app.css';
 	import { page } from '$app/state';
-	import { Button, GithubIcon, LangMenu, SiteFooter, SiteNav, ThemeToggle } from '@piighost/ui';
+	import {
+		Button,
+		GithubIcon,
+		LangMenu,
+		SiteFooter,
+		SiteNav,
+		ThemeToggle,
+		ecosystemLinks
+	} from '@piighost/ui';
 	import Search from '#lib/components/Search.svelte';
 	import { labels } from '#lib/i18n.js';
 	import { PUBLIC_CHAT_URL } from '$app/env/public';
@@ -16,11 +24,18 @@
 	const space = $derived(page.url.pathname.split('/')[2]);
 	const alternate = $derived((page.data as { alternate?: string }).alternate);
 
-	const links = $derived([
-		{ href: `/${lang}/guide/`, label: t.guide, current: space === 'guide' },
-		{ href: `/${lang}/domain/quickstart/`, label: t.domain, current: space === 'domain' },
-		{ href: 'https://hub.piighost.dev', label: t.hub, external: true },
-		{ href: 'https://piighost.dev', label: t.site, external: true }
+	/** The ecosystem menu every piighost header shares, without the philosophy and the registry. */
+	const links = $derived(
+		ecosystemLinks('docs', lang, ['philosophy', 'hub']).map((link) =>
+			// The docs link stays on this site, whatever host serves it.
+			link.label === 'Docs' ? { ...link, href: `/${lang}/` } : link
+		)
+	);
+
+	/** The docs' own switch, technical or domain documentation. */
+	const local = $derived([
+		{ href: `/${lang}/guide/`, label: t.guideShort, current: space === 'guide' },
+		{ href: `/${lang}/domain/quickstart/`, label: t.domainShort, current: space === 'domain' }
 	]);
 
 	/**
@@ -71,19 +86,32 @@
 	>{lang === 'fr' ? 'Aller au contenu' : 'Skip to content'}</a
 >
 
-<SiteNav homeHref="/{lang}/" {links} mainNavigationLabel={t.mainNavigation} menuLabel={t.menu}>
+{#snippet controls()}
+	<Button
+		variant="ghost"
+		size="icon"
+		href="https://github.com/Athroniaeth/piighost"
+		target="_blank"
+		rel="noreferrer"
+		aria-label={t.github}><GithubIcon class="size-5" /></Button
+	>
+	<ThemeToggle label={t.toggleTheme} />
+	<LangMenu current={lang} label={t.language} {locales} />
+{/snippet}
+
+<SiteNav
+	homeHref="/{lang}/"
+	surface="docs"
+	{links}
+	{local}
+	localStyle="segmented"
+	menuActions={controls}
+	mainNavigationLabel={t.mainNavigation}
+	menuLabel={t.menu}
+>
 	{#snippet actions()}
 		<Search {lang} />
-		<Button
-			variant="ghost"
-			size="icon"
-			href="https://github.com/Athroniaeth/piighost"
-			target="_blank"
-			rel="noreferrer"
-			aria-label={t.github}><GithubIcon class="size-5" /></Button
-		>
-		<ThemeToggle label={t.toggleTheme} />
-		<LangMenu current={lang} label={t.language} {locales} />
+		<span class="hidden items-center gap-1 lg:flex">{@render controls()}</span>
 	{/snippet}
 </SiteNav>
 
