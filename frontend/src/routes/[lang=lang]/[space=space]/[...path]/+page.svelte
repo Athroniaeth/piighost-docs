@@ -12,7 +12,12 @@
 	const lang = $derived(data.page.route.startsWith('/en/') ? 'en' : 'fr');
 	const t = $derived(labels(lang));
 	const isDomain = $derived(data.page.route.includes('/domain/'));
-	const title = $derived(`${data.page.headTitle} · piighost`);
+	// A search title that already names piighost does not repeat it.
+	const title = $derived(
+		/piighost/i.test(data.page.headTitle)
+			? data.page.headTitle
+			: `${data.page.headTitle} · piighost`
+	);
 	const structured = $derived(
 		pageGraph({
 			lang,
