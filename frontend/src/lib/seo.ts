@@ -7,8 +7,9 @@ import { labels, type Lang } from './i18n';
 
 export const SITE_URL = 'https://docs.piighost.dev';
 
-/** The share card, the site's own: 1200 by 630, the size every preview expects. */
-export const OG_IMAGE = { url: `${SITE_URL}/og.png`, width: 1200, height: 630 } as const;
+/** The share card, one per language: 1200 by 630, the size every preview expects. */
+export const OG_IMAGE = { width: 1200, height: 630 } as const;
+export const ogImageUrl = (lang: Lang) => `${SITE_URL}/og-${lang}.png`;
 
 /** The Open Graph locale of each language. */
 export const OG_LOCALE: Record<Lang, string> = { fr: 'fr_FR', en: 'en_US' };
@@ -55,7 +56,7 @@ export function pageGraph(page: {
 				inLanguage: page.lang,
 				url,
 				mainEntityOfPage: url,
-				image: OG_IMAGE.url,
+				image: ogImageUrl(page.lang),
 				...(page.modified ? { dateModified: page.modified } : {}),
 				isPartOf: {
 					'@type': 'WebSite',

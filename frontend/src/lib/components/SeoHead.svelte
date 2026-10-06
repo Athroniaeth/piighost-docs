@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { labels, type Lang } from '#lib/i18n.js';
-	import { OG_IMAGE, OG_LOCALE, SITE_URL, jsonLd } from '#lib/seo.js';
+	import { OG_IMAGE, OG_LOCALE, SITE_URL, jsonLd, ogImageUrl } from '#lib/seo.js';
 
 	/**
 	 * The head every page shares: its title and description, its canonical
@@ -56,7 +56,7 @@
 	{#if translated}
 		<meta property="og:locale:alternate" content={OG_LOCALE[lang === 'fr' ? 'en' : 'fr']} />
 	{/if}
-	<meta property="og:image" content={OG_IMAGE.url} />
+	<meta property="og:image" content={ogImageUrl(lang)} />
 	<meta property="og:image:type" content="image/png" />
 	<meta property="og:image:width" content={String(OG_IMAGE.width)} />
 	<meta property="og:image:height" content={String(OG_IMAGE.height)} />
