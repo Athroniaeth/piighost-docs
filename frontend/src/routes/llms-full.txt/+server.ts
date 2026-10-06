@@ -1,14 +1,13 @@
 import { idEntry, idList, idMarkdown, idRoute, SITE_URL } from '#lib/server/content/idcard.js';
 import { getSite } from '#lib/server/content/site.js';
+import { fullText, isRedirected } from '#lib/server/content/seo.js';
 
 export const prerender = true;
 
 /** Every page's Markdown, then every identifier card, in one file for an assistant that takes it whole. */
 export async function GET() {
 	const site = await getSite();
-	const pages = [...site.pages.values()].map(
-		(page) => `# ${page.title}\n\nSource: ${SITE_URL}${page.route}\n\n${page.markdown}`
-	);
+	const pages = [...site.pages.values()].filter((page) => !isRedirected(page.route)).map(fullText);
 	const cards = (['en', 'fr'] as const).flatMap((lang) =>
 		idList(site.ids).map(
 			(id) =>
