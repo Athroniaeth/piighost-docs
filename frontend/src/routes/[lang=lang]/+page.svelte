@@ -2,6 +2,10 @@
 	import { page } from '$app/state';
 	import BookOpen from '@lucide/svelte/icons/book-open';
 	import Users from '@lucide/svelte/icons/users';
+	import CodeXml from '@lucide/svelte/icons/code-xml';
+	import Scale from '@lucide/svelte/icons/scale';
+	import Server from '@lucide/svelte/icons/server';
+	import UserRound from '@lucide/svelte/icons/user-round';
 	import { Card, CardGrid, InstallTabs } from '@piighost/ui';
 	import { labels } from '#lib/i18n.js';
 
@@ -10,31 +14,36 @@
 
 	/** Who expects what from piighost is business content: each card opens its
 	 *  section of the needs page in the reader's language, which links on to the
-	 *  guide pages of that profile. */
+	 *  guide pages of that profile. The icon names the profile: the law, the
+	 *  code, the server, the person. */
 	const NEEDS = $derived(`/${lang}/domain/needs-by-profile/#`);
 	const profiles = $derived(
 		lang === 'fr'
 			? [
 					{
 						title: 'Responsable conformité',
+						icon: Scale,
 						text: 'Aucune donnée confidentielle ne part en clair, et vous pouvez le prouver.',
 						href: `${NEEDS}responsable-conformité-dpo`,
 						link: 'Vos besoins'
 					},
 					{
 						title: 'Développeur',
+						icon: CodeXml,
 						text: 'La protection s’ajoute à votre agent sans réécrire sa logique.',
 						href: `${NEEDS}développeur`,
 						link: 'Vos besoins'
 					},
 					{
 						title: 'Exploitant',
+						icon: Server,
 						text: 'Un serveur partagé, une mémoire chiffrée, des secrets hors des fichiers.',
 						href: `${NEEDS}exploitant`,
 						link: 'Vos besoins'
 					},
 					{
 						title: 'Utilisateur de l’application',
+						icon: UserRound,
 						text: 'Il lit ses vraies informations et ne voit jamais un jeton.',
 						href: `${NEEDS}utilisateur-de-lapplication`,
 						link: 'Ses besoins'
@@ -43,24 +52,28 @@
 			: [
 					{
 						title: 'Compliance officer',
+						icon: Scale,
 						text: 'No confidential data leaves in clear, and you can prove it.',
 						href: `${NEEDS}compliance-officer-dpo`,
 						link: 'Your needs'
 					},
 					{
 						title: 'Developer',
+						icon: CodeXml,
 						text: 'The protection joins your agent without rewriting its logic.',
 						href: `${NEEDS}developer`,
 						link: 'Your needs'
 					},
 					{
 						title: 'Operator',
+						icon: Server,
 						text: 'A shared server, an encrypted memory, secrets kept out of files.',
 						href: `${NEEDS}operator`,
 						link: 'Your needs'
 					},
 					{
 						title: 'Application user',
+						icon: UserRound,
 						text: 'They read their real information and never see a token.',
 						href: `${NEEDS}application-user`,
 						link: 'Their needs'
@@ -79,10 +92,11 @@
 	<link rel="alternate" hreflang="x-default" href="https://docs.piighost.dev/" />
 </svelte:head>
 
-<main id="content" class="mx-auto max-w-5xl space-y-14 px-6 py-14">
-	<header class="feuille space-y-5">
+<!-- One centred column, as wide as the reading text, like the philosophy page. -->
+<main id="content" class="feuille mx-auto max-w-3xl space-y-14 px-6 py-14">
+	<header class="space-y-5">
 		<h1 class="text-4xl font-bold tracking-[-0.02em] sm:text-5xl">{t.homeTitle}</h1>
-		<div class="max-w-2xl space-y-3 text-lg text-muted-foreground">
+		<div class="space-y-3 text-lg text-muted-foreground">
 			<p>{t.homeLead}</p>
 			<p>{t.homeTwoDocs}</p>
 			<ul class="list-disc space-y-1 pl-6">
@@ -125,9 +139,13 @@
 		<h2 class="text-2xl font-bold">{lang === 'fr' ? 'Selon votre profil' : 'By profile'}</h2>
 		<CardGrid>
 			{#each profiles as profile (profile.title)}
-				<Card title={profile.title} href={profile.href} linkLabel={profile.link}
-					><p>{profile.text}</p></Card
-				>
+				<Card title={profile.title} href={profile.href} linkLabel={profile.link}>
+					{#snippet icon()}<profile.icon
+							class="size-5 shrink-0 text-primary"
+							aria-hidden="true"
+						/>{/snippet}
+					<p>{profile.text}</p>
+				</Card>
 			{/each}
 		</CardGrid>
 	</section>
