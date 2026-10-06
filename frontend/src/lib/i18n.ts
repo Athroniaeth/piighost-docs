@@ -31,6 +31,7 @@ export const LABELS = {
 		license: 'piighost est sous licence MIT.',
 		ecosystem: 'Écosystème',
 		code: 'Code',
+		homeEyebrow: 'Docs',
 		homeTitle: 'Documentation',
 		homeLead:
 			'piighost protège les données confidentielles dans les conversations avec un LLM. Il remplace chaque valeur sensible par un jeton avant l’envoi au modèle, puis la restaure dans la réponse.',
@@ -79,6 +80,7 @@ export const LABELS = {
 		license: 'piighost is MIT licensed.',
 		ecosystem: 'Ecosystem',
 		code: 'Code',
+		homeEyebrow: 'Docs',
 		homeTitle: 'Documentation',
 		homeLead:
 			'piighost protects confidential data in conversations with an LLM. It replaces each sensitive value with a placeholder before the model sees it, then restores it in the reply.',

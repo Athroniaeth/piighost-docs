@@ -95,9 +95,13 @@
 <!-- One centred column, as wide as the reading text, like the philosophy page. -->
 <main id="content" class="feuille mx-auto max-w-3xl space-y-14 px-6 py-14">
 	<header class="space-y-5">
-		<h1 class="text-4xl font-bold tracking-[-0.02em] sm:text-5xl">{t.homeTitle}</h1>
-		<div class="space-y-3 text-lg text-muted-foreground">
-			<p>{t.homeLead}</p>
+		<!-- The philosophy page's heading: an eyebrow, a centred title, room below. -->
+		<div class="pb-7 text-center">
+			<p class="mb-2 text-sm font-semibold tracking-wide text-primary">{t.homeEyebrow}</p>
+			<h1 class="text-4xl font-bold tracking-tight">{t.homeTitle}</h1>
+		</div>
+		<div class="space-y-3 leading-7 text-muted-foreground">
+			<p class="text-lg leading-relaxed">{t.homeLead}</p>
 			<p>{t.homeTwoDocs}</p>
 			<ul class="list-disc space-y-1 pl-6">
 				<li><strong class="text-foreground">{t.guideArticle}</strong>, {t.homeGuideItem}</li>
