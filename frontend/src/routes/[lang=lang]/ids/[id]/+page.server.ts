@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { idEntry, idList, idRoute } from '#lib/server/content/idcard.js';
 import { getSite } from '#lib/server/content/site.js';
+import { clip } from '#lib/server/content/seo.js';
 import type { Language } from '#lib/server/content/config.js';
 import type { NavLink } from '@piighost/ui';
 import type { EntryGenerator, PageServerLoad } from './$types';
@@ -31,6 +32,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	];
 	return {
 		entry,
+		description: clip(entry.summary),
 		route,
 		breadcrumbs,
 		nav: site.nav.get(`${lang}/domain`) ?? [],

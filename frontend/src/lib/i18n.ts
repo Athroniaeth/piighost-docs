@@ -33,6 +33,14 @@ export const LABELS = {
 		code: 'Code',
 		homeEyebrow: 'Docs',
 		homeTitle: 'Documentation',
+		// The tab and the shared link say what the documentation is about; the
+		// page itself keeps its heading.
+		homeSeoTitle: 'Dé-identifier les données personnelles avant le LLM · documentation piighost',
+		homeDescription:
+			'piighost protège les données confidentielles envoyées à un LLM. Il remplace chaque valeur sensible par un jeton, puis la restaure dans la réponse.',
+		docsName: 'Documentation piighost',
+		ogImageAlt:
+			'Le fantôme de piighost et sa devise, « Everything the model can do. Nothing it doesn’t need to know. »',
 		homeLead:
 			'piighost protège les données confidentielles dans les conversations avec un LLM. Il remplace chaque valeur sensible par un jeton avant l’envoi au modèle, puis la restaure dans la réponse.',
 		homeTwoDocs:
@@ -82,6 +90,12 @@ export const LABELS = {
 		code: 'Code',
 		homeEyebrow: 'Docs',
 		homeTitle: 'Documentation',
+		homeSeoTitle: 'De-identify PII before the LLM · piighost documentation',
+		homeDescription:
+			'piighost protects confidential data sent to an LLM. It replaces each sensitive value with a placeholder before the model, then restores it in the reply.',
+		docsName: 'piighost documentation',
+		ogImageAlt:
+			"The piighost ghost and its motto, “Everything the model can do. Nothing it doesn't need to know.”",
 		homeLead:
 			'piighost protects confidential data in conversations with an LLM. It replaces each sensitive value with a placeholder before the model sees it, then restores it in the reply.',
 		homeTwoDocs:

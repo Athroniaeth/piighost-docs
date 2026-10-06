@@ -8,6 +8,7 @@
 	import UserRound from '@lucide/svelte/icons/user-round';
 	import { Card, CardGrid, InstallTabs } from '@piighost/ui';
 	import { labels } from '#lib/i18n.js';
+	import SeoHead from '#lib/components/SeoHead.svelte';
 
 	const lang = $derived(page.params.lang === 'en' ? 'en' : 'fr');
 	const t = $derived(labels(lang));
@@ -82,10 +83,15 @@
 	);
 </script>
 
+<SeoHead
+	{lang}
+	title={t.homeSeoTitle}
+	description={t.homeDescription}
+	route="/{lang}/"
+	type="website"
+/>
+
 <svelte:head>
-	<title>{t.homeTitle} · piighost</title>
-	<meta name="description" content={t.homeLead} />
-	<link rel="canonical" href="https://docs.piighost.dev/{lang}/" />
 	<link rel="alternate" hreflang="fr" href="https://docs.piighost.dev/fr/" />
 	<link rel="alternate" hreflang="en" href="https://docs.piighost.dev/en/" />
 	<!-- The root picks the reader's language. -->

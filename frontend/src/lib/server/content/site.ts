@@ -22,6 +22,8 @@ import { renderDiagram, closeDiagrams } from './diagrams';
 import { exportMarkdown } from './export';
 import { SITE_URL } from './idcard';
 import { traceRules } from './traceability';
+import { clip, lastModified } from './seo';
+import { LABELS } from '../../i18n';
 
 export type Space = 'guide' | 'domain';
 
@@ -34,7 +36,11 @@ export interface Page {
 	repoPath: string;
 	file: string;
 	title: string;
+	/** The title of the tab and of a shared link, without the " · piighost" suffix. */
+	headTitle: string;
 	description: string;
+	/** The date of the source file's last commit, when the checkout has its history. */
+	modified?: string;
 	source: string;
 	/** The page as plain Markdown, for an assistant: index.md, llms-full.txt, "Copy page". */
 	markdown: string;
@@ -126,15 +132,28 @@ function rawTitleOf(draft: Draft): string {
 	return draft.route.split('/').filter(Boolean).pop() ?? 'piighost';
 }
 
+/** The `seo_title` of the frontmatter: the tab's title, when the page's own is too short to be found. */
+function seoTitleOf(draft: Draft): string | undefined {
+	const fromMatter = draft.frontmatter.seo_title;
+	return typeof fromMatter === 'string' && fromMatter.trim()
+		? typeset(fromMatter.trim(), draft.lang)
+		: undefined;
+}
+
+/**
+ * The frontmatter's description as written, or the page's first paragraph cut
+ * to the length a search engine shows.
+ */
 function descriptionOf(draft: Draft): string {
 	const fromMatter = draft.frontmatter.description;
-	if (typeof fromMatter === 'string' && fromMatter) return fromMatter;
+	if (typeof fromMatter === 'string' && fromMatter.trim())
+		return fromMatter.replace(/\s+/g, ' ').trim();
 	// A reference page opens on the module it documents, `Module: piighost.x`,
 	// which says nothing of what the page holds: the next paragraph does.
 	const paragraph = draft.mdast.children.find(
 		(node) => node.type === 'paragraph' && !/^Module\s?:/.test(toString(node))
 	);
-	return paragraph ? toString(paragraph).slice(0, 220) : '';
+	return paragraph ? clip(toString(paragraph)) : '';
 }
 
 /** The guide's tree, from the `nav` of its Zensical configuration. */
@@ -423,7 +442,9 @@ async function load(): Promise<Site> {
 			repoPath: draft.repoPath,
 			file: draft.file,
 			title: titleOf(draft),
+			headTitle: seoTitleOf(draft) ?? titleOf(draft),
 			description: descriptionOf(draft),
+			modified: lastModified(draft.repoPath),
 			source: draft.source,
 			markdown,
 			nodes: built.nodes,
@@ -433,6 +454,7 @@ async function load(): Promise<Site> {
 		});
 	}
 	await closeDiagrams();
+	nameTabs(pages, drafts);
 
 	for (const lang of LANGUAGES) {
 		const key = `${lang}/domain`;
@@ -490,6 +512,29 @@ async function load(): Promise<Site> {
 			];
 
 	return { pages, nav, ids, problems };
+}
+
+/** What a domain page's tab adds to a title the guide uses too. */
+const DOMAIN_SUFFIX: Record<Language, string> = { fr: 'métier', en: 'domain' };
+
+/**
+ * Each page's tab title. The guide's home is titled "piighost": its tab names
+ * the space instead of "piighost · piighost". A title that both spaces of a
+ * language use, "Architecture" or "Glossary", says which one in the domain
+ * documentation's tab. A `seo_title` is kept as written.
+ */
+function nameTabs(pages: Map<string, Page>, drafts: Draft[]) {
+	const chosen = new Set(drafts.filter((draft) => seoTitleOf(draft)).map((draft) => draft.route));
+	for (const page of pages.values())
+		if (!chosen.has(page.route) && page.title.trim().toLowerCase() === 'piighost')
+			page.headTitle = page.space === 'domain' ? LABELS[page.lang].domain : LABELS[page.lang].guide;
+	const key = (page: Page) => `${page.lang} ${page.headTitle.toLowerCase()}`;
+	const spaces = new Map<string, Set<Space>>();
+	for (const page of pages.values())
+		spaces.set(key(page), (spaces.get(key(page)) ?? new Set()).add(page.space));
+	for (const page of pages.values())
+		if (!chosen.has(page.route) && page.space === 'domain' && spaces.get(key(page))!.size > 1)
+			page.headTitle = `${page.headTitle} (${DOMAIN_SUFFIX[page.lang]})`;
 }
 
 let site: Promise<Site> | undefined;

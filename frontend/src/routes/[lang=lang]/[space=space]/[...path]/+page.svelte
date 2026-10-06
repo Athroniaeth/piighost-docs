@@ -4,25 +4,38 @@
 	import Breadcrumbs from '#lib/components/Breadcrumbs.svelte';
 	import CopyPageMenu from '#lib/components/CopyPageMenu.svelte';
 	import FoldedPanel from '#lib/components/FoldedPanel.svelte';
+	import SeoHead from '#lib/components/SeoHead.svelte';
+	import { pageGraph } from '#lib/seo.js';
 
 	let { data } = $props();
 
 	const lang = $derived(data.page.route.startsWith('/en/') ? 'en' : 'fr');
 	const t = $derived(labels(lang));
 	const isDomain = $derived(data.page.route.includes('/domain/'));
-	// The guide's home is titled "piighost": the tab names the space instead
-	// of "piighost · piighost".
-	const title = $derived(
-		data.page.title.trim().toLowerCase() === 'piighost'
-			? `${isDomain ? t.domain : t.guide} · piighost`
-			: `${data.page.title} · piighost`
+	const title = $derived(`${data.page.headTitle} · piighost`);
+	const structured = $derived(
+		pageGraph({
+			lang,
+			route: data.page.route,
+			title: data.page.title,
+			description: data.page.description,
+			breadcrumbs: data.page.breadcrumbs,
+			modified: data.page.modified
+		})
 	);
 </script>
 
+<SeoHead
+	{lang}
+	{title}
+	description={data.page.description}
+	route={data.page.route}
+	translated={!!data.alternate}
+	markdownUrl={data.markdownUrl}
+	{structured}
+/>
+
 <svelte:head>
-	<title>{title}</title>
-	<meta name="description" content={data.page.description} />
-	<link rel="canonical" href="https://docs.piighost.dev{data.page.route}" />
 	{#if data.alternate}
 		<link
 			rel="alternate"
@@ -31,8 +44,6 @@
 		/>
 		<link rel="alternate" hreflang={lang} href="https://docs.piighost.dev{data.page.route}" />
 	{/if}
-	<meta property="og:title" content={title} />
-	<meta property="og:description" content={data.page.description} />
 </svelte:head>
 
 <div

@@ -7,6 +7,7 @@
 	import Breadcrumbs from '#lib/components/Breadcrumbs.svelte';
 	import CopyPageMenu from '#lib/components/CopyPageMenu.svelte';
 	import FoldedPanel from '#lib/components/FoldedPanel.svelte';
+	import SeoHead from '#lib/components/SeoHead.svelte';
 	import { labels } from '#lib/i18n.js';
 	import { CARD_TEXT } from '#lib/card-text.js';
 
@@ -27,10 +28,17 @@
 	const SHOWN = 12;
 </script>
 
+<!-- A card is a thin page, the address to cite: followed, kept out of the index. -->
+<SeoHead
+	{lang}
+	title="{entry.id} · piighost"
+	description={data.description}
+	route={data.route}
+	markdownUrl={data.markdownUrl}
+	noindex
+/>
+
 <svelte:head>
-	<title>{entry.id} · piighost</title>
-	<meta name="description" content={entry.summary} />
-	<link rel="canonical" href="https://docs.piighost.dev{data.route}" />
 	<link
 		rel="alternate"
 		hreflang={lang === 'fr' ? 'en' : 'fr'}

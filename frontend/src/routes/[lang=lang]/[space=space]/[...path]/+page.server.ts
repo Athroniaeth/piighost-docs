@@ -31,7 +31,9 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		page: {
 			title: page.title,
+			headTitle: page.headTitle,
 			description: page.description,
+			modified: page.modified,
 			nodes: page.nodes,
 			toc: page.toc,
 			breadcrumbs: page.breadcrumbs,
