@@ -172,8 +172,14 @@
 		{
 			title: t.ecosystem,
 			links: [
-				{ href: 'https://piighost.dev', label: 'piighost.dev', external: true },
-				{ href: 'https://catalog.piighost.dev', label: 'catalog.piighost.dev', external: true }
+				// The canonical addresses, in the reader's language: the bare
+				// domains redirect, and the site's home takes no trailing slash.
+				{ href: `https://piighost.dev/${lang}`, label: 'piighost.dev', external: true },
+				{
+					href: `https://catalog.piighost.dev/${lang}/`,
+					label: 'catalog.piighost.dev',
+					external: true
+				}
 			]
 		},
 		{
