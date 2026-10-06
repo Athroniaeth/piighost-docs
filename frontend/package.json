@@ -68,6 +68,6 @@
 	"dependencies": {
 		"@lucide/svelte": "^1.49.0",
 		"@openpanel/web": "^1.4.1",
-		"@piighost/ui": "file:vendor/piighost-ui-0.2.4.tgz"
+		"@piighost/ui": "file:vendor/piighost-ui-0.2.5.tgz"
 	}
 }
